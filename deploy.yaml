@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: gitfaas
-  namespace: openfaas-fn
+  namespace: <REPLACE>
   labels:
     app: gitfaas
 spec:
@@ -18,7 +18,7 @@ spec:
       shareProcessNamespace: true
       containers:
       - name:  git
-        image: wingardiumleviosa/gitfaas/git:0.0.3
+        image: wingardiumleviosa/gitfaas/gitfaas-git:0.0.3
         env:
         - name: GIT_URL
           value: "<REPLACE>"
@@ -38,7 +38,7 @@ spec:
           mountPath: /pod-data
 
       - name:  apply
-        image: wingardiumleviosa/gitfaas/apply:0.0.3
+        image: wingardiumleviosa/gitfaas/gitfaas-apply:0.0.3
         env:
         - name: WORK_PATH
           value: "/pod-data"

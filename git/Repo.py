@@ -25,10 +25,6 @@ class Repo(object):
         print("scheme = ", self.scheme, " repo url = ", self.repoUrl, "username = ", self.user_name)
 
     def _cloneRepo(self):
-        print("scheme = ", self.scheme,)
-        print(" repo url = ", self.repoUrl,)
-        print("username = ", self.user_name)
-        print("token = ", self.token)
         command = "git clone " + self.scheme + "://" + self.user_name + ":" + self.token + "@" + self.repoUrl
         print("THE COMMAND = ", command)
         Exec.run(command)

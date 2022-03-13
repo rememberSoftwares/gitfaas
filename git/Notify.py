@@ -48,7 +48,6 @@ class Notify(object):
             try:
                 print("Waiting for proof of life")
                 res = requests.get(url)
-                print("res = ", str(res))
                 return True
             except Exception as e:
                 print("Not ready... Trying again in 2 sec")

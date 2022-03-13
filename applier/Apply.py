@@ -24,13 +24,6 @@ class Kubernetes(object):
         print("Applying yaml = " + str(yaml_to_apply), file=sys.stderr)
         Exec.run("echo " + b64_yaml.decode("utf-8") + " | base64 -d | kubectl apply -f -")
 
-    """
-    @staticmethod
-    def apply(path):
-        print("Applying file = " + path)
-        Exec.run("kubectl apply -f " + path)
-    """
-
     @staticmethod
     def delete(config):
         print("Deleting = " + config.path)

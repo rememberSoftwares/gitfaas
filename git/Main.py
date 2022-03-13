@@ -14,7 +14,6 @@ GIT_URL = os.environ.get("GIT_URL", None)
 WORK_PATH = os.environ.get("WORK_PATH", None)
 GIT_USER_NAME = os.environ.get("GIT_USER_NAME", None)
 GIT_PERSONAL_TOKEN = os.environ.get("GIT_PERSONAL_TOKEN", None)
-print("auth = ", GIT_USER_NAME, GIT_PERSONAL_TOKEN)
 
 
 def receive_signal(signal_number, frame):
@@ -31,7 +30,6 @@ def repo_refresh(previous_hash):
         previous_hash = current_hash
     return previous_hash
 
-print("pid", os.getpid())
 
 try:
     check = InputValuesCheck()

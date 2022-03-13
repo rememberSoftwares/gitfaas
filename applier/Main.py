@@ -71,17 +71,9 @@ def publish(topic):
     if g_error is True:
         return jsonify({"error": True, "message": "App state is in ERROR. No requests will be served until resolution !"})
     report = []
-    print("topic = ", topic, file=sys.stderr)
-    print("Folder name = ", folder_name, file=sys.stderr)
-    print("current config = ", current_config, file=sys.stderr)
-    print("please show this = ", str(request.args), file=sys.stderr)
     if request.content_type.startswith('application/json'):
-        print("JSON ! ", file=sys.stderr)
-        print("plop ", str(request.json), file=sys.stderr)
         message_text = json.dumps(request.json)
     elif request.content_type.startswith('text/plain'):
-        print("text ! ", file=sys.stderr)
-        print("plop ", request.data, file=sys.stderr)
         message_text = str(request.data)
     else:
         return jsonify({"error": True, "message": "No contentType detected. Please use application/json or text/plain."})
@@ -92,15 +84,12 @@ def publish(topic):
                 for file_path in current_topic["configs"]:
                     absolute_path = WORK_PATH + "/" + folder_name + "/" + file_path
                     template_params = request.args.to_dict()# if len(request.args) <= 0 or request.args is None else {}
-                    print("template params = ", str(template_params), file=sys.stderr)
-                    print(str(type(template_params)), file=sys.stderr)
                     try:
                         yaml_to_apply = set_labels(absolute_path, "UUID_@todo", message_text, template_params)
                     except FileNotFoundError:
                         print("[WARN]: File to apply not found. Check config.json !")
                         report.append({"error": True, "path": absolute_path})
                         continue
-                    print("yaml stuff = ", yaml_to_apply, file=sys.stderr)
                     Kubernetes.apply_from_stdin(yaml_to_apply)
                     report.append({"error": False, "path": absolute_path})
         return jsonify(report)
@@ -113,7 +102,6 @@ def set_labels(absolute_path, request_uuid, message, template_params):
     template_params["MESSAGE"] = b64_msg.decode("utf-8")
     template_params["REQUEST_UUID"] = request_uuid
     template_params["RANDOM"] = str(uuid.uuid4())
-    print("final = ", template_params, file=sys.stderr)
     with open(absolute_path, 'r') as f:
         return chevron.render(f, template_params)
 

@@ -7,6 +7,9 @@ Gitfaas acts like a [GitOps](https://www.weave.works/technologies/gitops/) techn
 
 Gitfaas is a FAAS (Function As A Service) like [Openfaas](https://www.openfaas.com/) or [Fission](https://fission.io/) meaning that it provides developers with serverless containers.
 
+project status : PRE-ALPHA  
+Do not use in production before BETA. Everything works but is you try to break it, it will break.  
+
 ## Functionalities
 
 * **One pod per request** : Each of your requests to Gitfaas will be served by a new pod. This tends to create longer responses in time but allows dealing with volumes far easily.

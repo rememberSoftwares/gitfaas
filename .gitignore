@@ -1,0 +1,3 @@
+buildAndPushApplyDev.sh
+buildAndPushGitDev.sh
+deployDev.yaml

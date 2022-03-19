@@ -9,7 +9,7 @@ import base64
 import uuid
 import traceback
 import logging
-from functools import wraps
+import redis
 
 from Apply import Kubernetes
 
@@ -17,14 +17,21 @@ app = Flask(__name__)
 
 WORK_PATH = os.environ.get("WORK_PATH", None)
 
-current_config = None
-folder_name = None
-git_pid = None
-g_error = False
+#current_config = None
+#folder_name = None
+#git_pid = None
+#g_error = False
+REDIS_PASSWORD = os.environ.get("REDIS_PASSWORD", None)
+if REDIS_PASSWORD is None:
+    print("Redis password is not set. Exiting now..")
+    sys.exit(1)
+r = redis.Redis(host='gitfaas-redis-master', port=6379, db=0, password=REDIS_PASSWORD) #temp test password
+
+r.set('error', "False")
 
 
 def ready_to_use():
-    return current_config is not None and folder_name is not None
+    return r.get("current_config") is not None and r.get("folder_name") is not None and r.get("error").decode("utf-8") == "False"
 
 
 @app.route('/alive', methods=["GET"])
@@ -34,46 +41,48 @@ def alive():
 
 @app.route('/folderName', methods=["POST"])
 def update_folder_name():
-    global folder_name
-    folder_name = request.json["folderName"]
+    #global folder_name
+    r.set("folder_name", request.json["folderName"])
+    #folder_name = request.json["folderName"]
     return jsonify({"error": False})
 
 @app.route('/pidUpdate', methods=["POST"])
 def update_pid():
-    global git_pid
-    git_pid = int(request.json["pid"])
+    r.set("git_pid", int(request.json["pid"]))
     return jsonify({"error": False})
 
 
 @app.route('/configUpdate', methods=["POST"])
 def update_config():
-    global current_config
-    global g_error
     try:
-        current_config = json.loads(request.json)
-        g_error = False
+        json.loads(request.json)
+        r.set("current_config", request.json)
+        r.set("error", "False")
     except Exception as e:
-        g_error = True
+        r.set("error", "True")
         logging.error(traceback.format_exc())
         return {"error": True, "message": "Loading config.json failed. Check common JSON issues like missing comas etc"}
     return jsonify({"error": False})
 
 @app.route('/refresh', methods=["GET"])
 def refresh():
+    git_pid = r.get("git_pid")
     if git_pid is None:
         return jsonify({"error": True, "message": "Pid of GIT container unknown. This should have been auto configured on startup"})
-    os.kill(git_pid, signal.SIGUSR1)
+    os.kill(int(git_pid), signal.SIGUSR1)
     return jsonify({"error": False})
 
 
 @app.route('/publish/<topic>', methods=["POST"])
 def publish(topic):
-    if g_error is True:
+    #if g_error is True:
+    if r.get("error").decode("utf-8") == "True":
         return jsonify({"error": True, "message": "App state is in ERROR. No requests will be served until resolution !"})
     report = []
+    print("[INFO]: Topic [" + topic + "]")
     print("topic = ", topic, file=sys.stderr)
-    print("Folder name = ", folder_name, file=sys.stderr)
-    print("current config = ", current_config, file=sys.stderr)
+    print("Folder name = ", r.get("folder_name"), file=sys.stderr)
+    print("current config = ", r.get("current_config"), file=sys.stderr)
     print("please show this = ", str(request.args), file=sys.stderr)
     if request.content_type.startswith('application/json'):
         print("JSON ! ", file=sys.stderr)
@@ -87,15 +96,16 @@ def publish(topic):
         return jsonify({"error": True, "message": "No contentType detected. Please use application/json or text/plain."})
 
     if ready_to_use():
+        current_config = json.loads(r.get("current_config"))
         for current_topic in current_config["topics"]:
             if current_topic["name"] == topic:
                 for file_path in current_topic["configs"]:
-                    absolute_path = WORK_PATH + "/" + folder_name + "/" + file_path
+                    absolute_path = WORK_PATH + "/" + r.get("folder_name").decode("utf-8") + "/" + file_path
                     template_params = request.args.to_dict()# if len(request.args) <= 0 or request.args is None else {}
                     print("template params = ", str(template_params), file=sys.stderr)
                     print(str(type(template_params)), file=sys.stderr)
                     try:
-                        yaml_to_apply = set_labels(absolute_path, "UUID_@todo", message_text, template_params)
+                        yaml_to_apply = templatize_yaml(absolute_path, "UUID_@todo", message_text, template_params, topic)
                     except FileNotFoundError:
                         print("[WARN]: File to apply not found. Check config.json !")
                         report.append({"error": True, "path": absolute_path})
@@ -108,11 +118,12 @@ def publish(topic):
         return jsonify({"error": True, "message": "Folder name or config.json is missing"})
 
 
-def set_labels(absolute_path, request_uuid, message, template_params):
+def templatize_yaml(absolute_path, request_uuid, message, template_params, topic):
     b64_msg = base64.b64encode(bytes(message, 'utf-8'))
     template_params["MESSAGE"] = b64_msg.decode("utf-8")
     template_params["REQUEST_UUID"] = request_uuid
     template_params["RANDOM"] = str(uuid.uuid4())
+    template_params["TOPIC"] = topic
     print("final = ", template_params, file=sys.stderr)
     with open(absolute_path, 'r') as f:
         return chevron.render(f, template_params)

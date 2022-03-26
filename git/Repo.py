@@ -1,5 +1,7 @@
 import subprocess
 import os
+import sys
+
 
 class Exec(object):
 
@@ -28,8 +30,11 @@ class Repo(object):
         print("scheme = ", self.scheme,)
         print(" repo url = ", self.repoUrl,)
         print("username = ", self.user_name)
-        print("token = ", self.token)
-        command = "git clone " + self.scheme + "://" + self.user_name + ":" + self.token + "@" + self.repoUrl
+        GIT_BRANCH = os.environ.get('GIT_PULL_BRANCH', None)
+        if GIT_BRANCH is None:
+            print("No git branch has been set. Exiting now...")
+            sys.exit(1)
+        command = "git clone -b " + GIT_BRANCH + " --single-branch " + self.scheme + "://" + self.user_name + ":" + self.token + "@" + self.repoUrl
         print("THE COMMAND = ", command)
         Exec.run(command)
         os.chdir(self.extract_folder_name())
@@ -47,7 +52,7 @@ class Repo(object):
     def getCurrentHash(self):
         print("Getting current hash")
         command = "git rev-parse HEAD"
-        return (Exec.run(command)[0]).rstrip() #run renvoie un tableau mais moi j'aurais forecement qu'une seule ligne
+        return (Exec.run(command)[0]).rstrip() #run renvoie un tableau mais moi j'aurais forcement qu'une seule ligne
 
     def diff(self, hash1, hash2):
         command = "git diff --name-only " + hash1.decode() + " " + hash2.decode()

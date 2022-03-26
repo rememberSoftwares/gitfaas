@@ -75,9 +75,11 @@ def refresh():
 
 @app.route('/publish/<topic>', methods=["POST"])
 def publish(topic):
-    #if g_error is True:
     if r.get("error").decode("utf-8") == "True":
         return jsonify({"error": True, "message": "App state is in ERROR. No requests will be served until resolution !"})
+    if topic == "":
+        return jsonify(
+            {"error": True, "message": "Topic cannot be an empty string"})
     report = []
     print("[INFO]: Topic [" + topic + "]")
     print("topic = ", topic, file=sys.stderr)

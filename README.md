@@ -350,4 +350,9 @@ spec:
 ---
 
 To refresh the GIT repository inside Gitfaas without having to wait the automatic sync use :  
-* GET _http://gitfaas:500°/refresh_
+* GET _http://gitfaas:5000/refresh_
+
+With curl :
+```
+ curl "http://gitfaas:5000/refresh" -H 'Content-Type: application/json'
+```

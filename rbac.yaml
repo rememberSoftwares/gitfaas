@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: gitfaas
+  namespace: openfaas-fn
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: gitfaas-rl
+rules:
+- apiGroups: [""]
+  resources: ["pods", "services"]
+  verbs: ["patch", "create", "update", "get", "list"]
+- apiGroups: ["apps"]
+  resources: ["deployments"]
+  verbs: ["patch", "create", "update", "get", "list"]
+- apiGroups: ["batch"]
+  resources: ["jobs"]
+  verbs:  ["patch", "create", "update", "get", "list"]
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: gitfaas-rb
+subjects:
+- kind: ServiceAccount
+  name: gitfaas
+  namespace: openfaas-fn
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: gitfaas-rl

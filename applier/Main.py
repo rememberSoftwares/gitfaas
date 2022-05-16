@@ -1,6 +1,6 @@
 import signal
 
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, render_template, jsonify, request, abort
 import sys
 import json
 import os
@@ -11,6 +11,7 @@ import traceback
 import logging
 import redis
 import re
+from functools import wraps
 
 from Apply import Kubernetes
 from SafeMode import *
@@ -19,8 +20,11 @@ from ConfigValidator import *
 from Report import Report
 
 app = Flask(__name__)
+logger = logging.getLogger('dev')
+logger.setLevel(logging.DEBUG)
 
 WORK_PATH = os.environ.get("WORK_PATH", None)
+TOFU_CODE = None
 
 # INIT
 REDIS_PASSWORD = os.environ.get("REDIS_PASSWORD", None)
@@ -37,23 +41,47 @@ def ready_to_use():
     return r.get("current_config") is not None and r.get("folder_name") is not None and r.get("master_error").decode("utf-8") == "False"
 
 
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        print("decorator = ", request.args.get('tofu'), file=sys.stderr)
+        if request.args.get('tofu') == TOFU_CODE:
+            return f(*args, **kwargs)
+        else:
+            abort(404)
+    return decorated_function
+
+
 @app.route('/alive', methods=["GET"])
 def alive():
     return jsonify({"alive": True})
 
 
+@app.route('/tofuAuth', methods=["POST"])
+def tofu_auth():
+    global TOFU_CODE
+    TOFU_CODE = request.args.get('tofu')
+    return jsonify({"alive": True})
+
+
 @app.route('/folderName', methods=["POST"])
+@login_required
 def update_folder_name():
+    #tofu_code = request.args.get('tofu')
+    #if tofu_code == TOFU_CODE:
+    #    pass # Continuer ici. Faudrait foutre ca dans un decorateur
     r.set("folder_name", request.json["folderName"])
     return jsonify({"error": False})
 
 @app.route('/pidUpdate', methods=["POST"])
+@login_required
 def update_pid():
     r.set("git_pid", int(request.json["pid"]))
     return jsonify({"error": False})
 
 
 @app.route('/configUpdate', methods=["POST"])
+@login_required
 def update_config():
     """
     Gets the config from the git repo

@@ -3,18 +3,27 @@ import signal
 import time
 import sys
 import sh
+import logging
 
 from InputValuesCheck import *
 from Repo import Repo
 from Notify import *
 from ConfigReader import *
 
+AVAILABLE_LOG_LEVELS = ["DEBUG", "INFO", "WARN"]
+
 POLLING_TIME = os.environ.get('POLLING_TIME', 1)
 GIT_URL = os.environ.get("GIT_URL", None)
 WORK_PATH = os.environ.get("WORK_PATH", None)
 GIT_USER_NAME = os.environ.get("GIT_USER_NAME", None)
 GIT_PERSONAL_TOKEN = os.environ.get("GIT_PERSONAL_TOKEN", None)
-print("auth = ", GIT_USER_NAME, GIT_PERSONAL_TOKEN)
+LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO")
+
+logger = logging.getLogger('dev')
+if LOG_LEVEL not in AVAILABLE_LOG_LEVELS:
+    LOG_LEVEL = "INFO"
+    print("Invalid value given to LOG_LEVEL. Defaulting to level : INFO")
+logger.setLevel(getattr(logging, LOG_LEVEL))
 
 
 def receive_signal(signal_number, frame):
@@ -27,12 +36,12 @@ def repo_refresh(previous_hash):
     repo.updateRepo()
     current_hash = repo.getCurrentHash()
     if current_hash != previous_hash:
-        Notify.manifests_config(config_reader.load_config_from_fs())
+        notify.manifests_config(config_reader.load_config_from_fs())
         previous_hash = current_hash
     return previous_hash
 
-print("pid", os.getpid())
 
+notify = Notify()
 try:
     check = InputValuesCheck()
     check.checkPollingTime(POLLING_TIME)
@@ -50,9 +59,10 @@ repo = Repo(GIT_URL, GIT_USER_NAME, GIT_PERSONAL_TOKEN)
 config = None
 last_hash = None
 
-Notify.wait_for_ready_status()
-Notify.clone_folder_name(repo.extract_folder_name())
-Notify.pid()
+notify.wait_for_ready_status()
+notify.set_tofu_code()
+notify.clone_folder_name(repo.extract_folder_name())
+notify.current_proc_pid()
 signal.signal(signal.SIGUSR1, receive_signal)
 
 while True:

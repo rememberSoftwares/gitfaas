@@ -27,9 +27,9 @@ class Notify(object):
         except Exception as e:
             logging.error(traceback.format_exc())
 
-    def clone_folder_name(self, clone_folder):
-        url = 'http://127.0.0.1:5000/folderName?tofu=' + self.tofu_code
-        data = {"folderName": clone_folder}
+    def folder_in_use(self, full_path):
+        url = 'http://127.0.0.1:5000/folderInUse?tofu=' + self.tofu_code
+        data = {"path": full_path}
         try:
             print("sending", data)
             res = requests.post(url, json=data)

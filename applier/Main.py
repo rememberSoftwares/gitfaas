@@ -25,6 +25,7 @@ logger.setLevel(logging.DEBUG)
 
 WORK_PATH = os.environ.get("WORK_PATH", None)
 TOFU_CODE = None
+AVAILABLE_APPLY_FOLDERS = ["apply1", "apply2"]
 
 # INIT
 REDIS_PASSWORD = os.environ.get("REDIS_PASSWORD", None)
@@ -38,13 +39,12 @@ r.set("last_master_error_description", "")
 
 
 def ready_to_use():
-    return r.get("current_config") is not None and r.get("folder_name") is not None and r.get("master_error").decode("utf-8") == "False"
+    return r.get("current_config") is not None and r.get("folder_in_use") is not None and r.get("master_error").decode("utf-8") == "False"
 
 
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        print("decorator = ", request.args.get('tofu'), file=sys.stderr)
         if request.args.get('tofu') == TOFU_CODE:
             return f(*args, **kwargs)
         else:
@@ -64,14 +64,17 @@ def tofu_auth():
     return jsonify({"alive": True})
 
 
-@app.route('/folderName', methods=["POST"])
+@app.route('/folderInUse', methods=["POST"])
 @login_required
 def update_folder_name():
-    #tofu_code = request.args.get('tofu')
-    #if tofu_code == TOFU_CODE:
-    #    pass # Continuer ici. Faudrait foutre ca dans un decorateur
-    r.set("folder_name", request.json["folderName"])
+    folder_name = request.json["path"]
+    # For security reasons the folder names are duplicated in the Apply container.
+    # Enforcing names blocks potential path traversal attacks
+    #if folder_name not in AVAILABLE_APPLY_FOLDERS:
+    #    return jsonify({"error": True, "message": "Invalid folder name"}), 400
+    r.set("folder_in_use", folder_name)
     return jsonify({"error": False})
+
 
 @app.route('/pidUpdate', methods=["POST"])
 @login_required
@@ -176,14 +179,12 @@ def publish(topic):
     #report = {"requestUid": None, "applies": [], "error": False}
     report = Report()
     print("[INFO]: Topic [" + topic + "]", file=sys.stderr)
-    print("topic = ", topic, r.get("folder_name"), file=sys.stderr)
+    print("topic = ", topic, r.get("folder_in_use"), file=sys.stderr)
 
     logging.error("-----> ERROR")
     logging.warning("------> WARNING")
     logging.info("------> INFO")
     logging.debug("-----> DEBUG")
-
-
 
     if request.content_type is None:
         return jsonify(
@@ -204,7 +205,7 @@ def publish(topic):
         for current_topic in current_config["topics"]:
             if current_topic["name"] == topic:
                 for file_path in current_topic["configs"]:
-                    absolute_path = WORK_PATH + "/" + r.get("folder_name").decode("utf-8") + "/" + file_path
+                    absolute_path = r.get("folder_in_use").decode("utf-8") + "/" + file_path
                     request_params = request.args.to_dict()
                     function_uid = add_function_uid_to_request(request_uid)
                     try:

@@ -20,7 +20,7 @@ class InputValuesCheck(object):
 
     @staticmethod
     def checkWorkPath(value):
-        if len(value) > 1 and value[0] == "/":
+        if value is not None and len(value) > 1 and value[0] == "/":
             return
         else:
             print(

@@ -1,10 +1,14 @@
+import re
 import subprocess
 import os
 import sys
 from enum import Enum, auto
 import shutil
 
+from Errors import *
+
 CLONE_FOLDER = "clone_folder"
+FAILED_GIT_PULL_REGEX = "fatal\: couldn\'t find remote|fatal\: repository|fatal\: Remote branch .* not found in upstream"
 
 
 class Exec(object):
@@ -12,13 +16,20 @@ class Exec(object):
     @staticmethod
     def run(command):
         output = []
-        print("command = " + command)
+        print("command = " + command, file=sys.stderr)
         p = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         for line in p.stdout.readlines():
-            print(line)
-            output.append(line)
+            print(line, file=sys.stderr)
+            output.append(line.decode("utf-8"))
         p.wait()
         return output
+
+    @staticmethod
+    def search_for(output, needle):
+        for line in output:
+            match = re.search(needle, line)
+            if match:
+                raise GitUpdateError("Git update failed : " + str(line))
 
 
 class ApplySubDirs(Enum):
@@ -60,9 +71,6 @@ class ApplyFolders:
     def to_full_path(self, e_folder, repo_name):
         # @todo check type of e_folder
         return self.volume_mount_path + "/" + self.folders_map[e_folder] + "/" + repo_name
-
-    #def _move_to_clone_folder(self):
-    #   os.chdir(self.volume_mount_path + "/clone_folder")
 
     def _get_folder_path_from_enum(self, e_folder):
         # @todo check type of e_folder
@@ -107,16 +115,19 @@ class Repo(object):
             pass
         os.chdir(self.volume_mount_path + "/" + CLONE_FOLDER)
         command = "git clone -b " + self.branch + " --single-branch " + self.scheme + "://" + self.user_name + ":" + self.token + "@" + self.repoUrl
-        Exec.run(command)
-        os.chdir(self.volume_mount_path + "/" + CLONE_FOLDER + "/" + self.repoName)
+        output = Exec.run(command)
+        Exec.search_for(output, FAILED_GIT_PULL_REGEX)
 
-        #self.apply_folders.copy_content(self.repoName, ApplySubDirs.FOLDER1)
-        #self.apply_folders.copy_content(self.repoName, ApplySubDirs.FOLDER2)
+        try:
+            os.chdir(self.volume_mount_path + "/" + CLONE_FOLDER + "/" + self.repoName)
+        except FileNotFoundError:
+            raise GitUpdateError("No folder was cloned")
         self.firstRun = False
 
     def _pull_repo(self):
         command = "git pull origin " + self.branch
-        Exec.run(command)
+        output = Exec.run(command)
+        Exec.search_for(output, FAILED_GIT_PULL_REGEX)
 
     def update_repo(self):
         print("Updating repo")

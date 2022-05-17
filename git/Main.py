@@ -9,6 +9,7 @@ from InputValuesCheck import *
 from Repo import Repo
 from Notify import *
 from ConfigReader import *
+from Errors import *
 
 AVAILABLE_LOG_LEVELS = ["DEBUG", "INFO", "WARN"]
 
@@ -34,12 +35,15 @@ def receive_signal(signal_number, frame):
 
 
 def repo_refresh():
-    repo.update_repo()
+    try:
+        repo.update_repo()
+    except GitUpdateError as err:
+        logging.fatal(str(err))
+        return
+
     if repo.has_repo_changed():
         notify.manifests_config(config_reader.load_config_from_fs())
 
-
-notify = Notify()
 try:
     check = InputValuesCheck()
     check.checkPollingTime(POLLING_TIME)
@@ -52,12 +56,12 @@ except ValueError:
     sys.exit()
 
 config_reader = ConfigReader()
+notify = Notify()
 repo = Repo(GIT_URL, GIT_USER_NAME, GIT_PERSONAL_TOKEN, GIT_BRANCH, VOLUME_MOUNT_PATH, notify)
 config = None
 
 notify.wait_for_ready_status()
 notify.set_tofu_code()
-#notify.folder_in_use(VOLUME_MOUNT_PATH + "/" + repo. repo.extract_folder_name())
 notify.current_proc_pid()
 signal.signal(signal.SIGUSR1, receive_signal)
 

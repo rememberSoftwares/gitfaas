@@ -20,12 +20,16 @@ from ConfigValidator import *
 from Report import Report
 
 app = Flask(__name__)
-logger = logging.getLogger('dev')
-logger.setLevel(logging.DEBUG)
+logging.basicConfig()
+logging.getLogger().setLevel(logging.DEBUG)
 
-WORK_PATH = os.environ.get("WORK_PATH", None)
+logging.error("-----> ERROR")
+logging.warning("------> WARNING")
+logging.info("------> INFO")
+logging.debug("-----> DEBUG")
+
+VOLUME_MOUNT_PATH = os.environ.get("VOLUME_MOUNT_PATH", None)
 TOFU_CODE = None
-AVAILABLE_APPLY_FOLDERS = ["apply1", "apply2"]
 
 # INIT
 REDIS_PASSWORD = os.environ.get("REDIS_PASSWORD", None)
@@ -68,10 +72,6 @@ def tofu_auth():
 @login_required
 def update_folder_name():
     folder_name = request.json["path"]
-    # For security reasons the folder names are duplicated in the Apply container.
-    # Enforcing names blocks potential path traversal attacks
-    #if folder_name not in AVAILABLE_APPLY_FOLDERS:
-    #    return jsonify({"error": True, "message": "Invalid folder name"}), 400
     r.set("folder_in_use", folder_name)
     return jsonify({"error": False})
 
@@ -176,7 +176,6 @@ def publish(topic):
     if r.get("master_error").decode("utf-8") == "True":
         return jsonify({"error": True, "message": "App state is in ERROR : " + r.get("last_master_error_description").decode("utf-8")}), 409
 
-    #report = {"requestUid": None, "applies": [], "error": False}
     report = Report()
     print("[INFO]: Topic [" + topic + "]", file=sys.stderr)
     print("topic = ", topic, r.get("folder_in_use"), file=sys.stderr)
@@ -232,8 +231,6 @@ def publish(topic):
 
                     except ApplyError as err:
                         print("[WARN]: " + str(err), file=sys.stderr)
-                        #report["applies"].append({"error": True, "path": absolute_path, "message": str(err)})
-                        #report["error"] = True
                         report.create_report(True, absolute_path, str(err))
 
         return jsonify(report.to_json()), 202

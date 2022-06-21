@@ -1,0 +1,75 @@
+# Default values for gitfaas.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+image:
+  repository: docker.io
+  pullPolicy: Always
+
+imagePullSecrets: []
+
+install:
+  replicas: 1
+
+rbac:
+  # Value can either be "clusterWide" or "namespaced"
+  scope: "clusterWide"
+
+service:
+  type: ClusterIP
+  port: 5000
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+  hosts:
+    - host: chart-example.local
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+
+nodeSelector: {}
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+tolerations: []
+
+affinity: {}
+
+app:
+  git:
+    url:
+    userName:
+    # Git personnal token 
+    personalToken:
+    # Git branch to pull where the manifests are stored
+    pullBranch: main
+    # Refresh git repo any x minutes
+    pollingInterval: "5"
+  apply:
+    # Ressources that will be blocked if appearing in any files to be deployed by gitfaas. Separator is space.
+    bannedKubeRessources: "Role RoleBinding ClusterRole ClusterRoleBinding ServiceAccount"
+
+redis:
+  auth:
+    password: thisisthepassword
+  master:
+    persistence:
+      enabled: false
+  replica:
+    replicaCount: 0
+    persistence:
+      enabled: false

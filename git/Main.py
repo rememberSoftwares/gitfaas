@@ -13,7 +13,7 @@ from Errors import *
 
 AVAILABLE_LOG_LEVELS = ["DEBUG", "INFO", "WARN"]
 
-POLLING_TIME = os.environ.get('POLLING_TIME', 1)
+POLLING_INTERVAL = os.environ.get('POLLING_INTERVAL', 1)
 GIT_URL = os.environ.get("GIT_URL", None)
 VOLUME_MOUNT_PATH = os.environ.get("VOLUME_MOUNT_PATH", None)
 GIT_USER_NAME = os.environ.get("GIT_USER_NAME", None)
@@ -46,11 +46,11 @@ def repo_refresh():
 
 try:
     check = InputValuesCheck()
-    check.checkPollingTime(POLLING_TIME)
+    check.checkPollingTime(POLLING_INTERVAL)
     check.checkGitUrl(GIT_URL)
     check.checkWorkPath(VOLUME_MOUNT_PATH)
     check.checkGitAuth(GIT_USER_NAME, GIT_PERSONAL_TOKEN)
-    POLLING_TIME = int(POLLING_TIME)
+    POLLING_INTERVAL = int(POLLING_INTERVAL)
 except ValueError:
     print("EXITING !")
     sys.exit()
@@ -68,4 +68,4 @@ signal.signal(signal.SIGUSR1, receive_signal)
 while True:
     repo_refresh()
     print("Waiting !")
-    time.sleep(POLLING_TIME * 60)
+    time.sleep(POLLING_INTERVAL * 60)

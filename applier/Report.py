@@ -9,7 +9,6 @@ class Report:
         self.master_error = False
 
     def create_report(self, error, absolute_path, message):
-        logging.info("I should see this")
         if error is True:
             self.master_error = True
         try:

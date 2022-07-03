@@ -21,15 +21,19 @@ class InputValuesCheck(object):
         :param use_ssh_key:
         :return:
         """
+        if use_ssh_key is None:
+            raise ValueError("Using SSH key to clone should be set to 'yes' or 'no' (evaluated as empty)")
         if use_ssh_key.lower() == "yes":
             if len(value) <= 0:
                 raise ValueError("SSH Git URL is invalid (evaluated as 0 length)")
             return
-        else:
+        elif use_ssh_key.lower() == "no":
             if validators.url(value):
                 return
             else:
                 raise ValueError("HTTP Git URL is invalid (does not look like a url")
+        else:
+            raise ValueError("Using SSH key to clone should be set to 'yes' or 'no'")
 
     @staticmethod
     def check_work_path(value):

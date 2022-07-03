@@ -6,22 +6,22 @@ import sh
 import logging
 
 from InputValuesCheck import *
-from Repo import Repo
+from Repo import RepoFactory
 from Notify import *
 from ConfigReader import *
 from Errors import *
-
-AVAILABLE_LOG_LEVELS = ["DEBUG", "INFO", "WARN"]
+from Config import AVAILABLE_LOG_LEVELS
 
 POLLING_INTERVAL = os.environ.get('POLLING_INTERVAL', 1)
-GIT_URL = os.environ.get("GIT_URL", None)
-VOLUME_MOUNT_PATH = os.environ.get("VOLUME_MOUNT_PATH", None)
+GIT_REPO_URL = os.environ.get("GIT_URL", None)
 GIT_USER_NAME = os.environ.get("GIT_USER_NAME", None)
 GIT_PERSONAL_TOKEN = os.environ.get("GIT_PERSONAL_TOKEN", None)
 GIT_BRANCH = os.environ.get("GIT_PULL_BRANCH", "main")
 GIT_USE_SSH_KEY = os.environ.get("GIT_USE_SSH_KEY", None)
 LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO")
 GIT_STRICT_HOST_KEY_CHECKING = os.environ.get("GIT_STRICT_HOST_KEY_CHECKING", "yes")
+
+
 
 print(str(type(GIT_USE_SSH_KEY)))
 print(str(GIT_USE_SSH_KEY))
@@ -65,25 +65,19 @@ def repo_refresh():
 
 try:
     check = InputValuesCheck()
-    print("a")
     check.check_polling_time(POLLING_INTERVAL)
-    print("b")
-    check.check_git_url(GIT_URL, GIT_USE_SSH_KEY)
-    print("c")
-    check.check_work_path(VOLUME_MOUNT_PATH)
-    print("d")
+    check.check_git_url(GIT_REPO_URL, GIT_USE_SSH_KEY)
     check.check_git_auth(GIT_USER_NAME, GIT_PERSONAL_TOKEN, GIT_USE_SSH_KEY)
-    print("e")
     check.check_git_strict_host_key_checking(GIT_STRICT_HOST_KEY_CHECKING)
-    print("f")
     POLLING_INTERVAL = int(POLLING_INTERVAL)
-except ValueError:
+except ValueError as err:
+    logging.info(err)
     print("EXITING !")
     sys.exit()
 
 config_reader = ConfigReader()
 notify = Notify()
-repo = Repo(GIT_URL, GIT_USER_NAME, GIT_PERSONAL_TOKEN, GIT_BRANCH, VOLUME_MOUNT_PATH, notify)
+repo = RepoFactory.create_repo(GIT_REPO_URL, GIT_USER_NAME, GIT_PERSONAL_TOKEN, GIT_BRANCH, GIT_STRICT_HOST_KEY_CHECKING, notify)
 config = None
 
 notify.wait_for_ready_status()

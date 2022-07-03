@@ -36,6 +36,10 @@ class ApplySubDirs(Enum):
     FOLDER1 = auto()
     FOLDER2 = auto()
 
+class UrlType(Enum):
+    HTTP = auto()
+    SSH = auto()
+
 
 class ApplyFolders:
 
@@ -55,7 +59,7 @@ class ApplyFolders:
         else:
             e_target_folder = self.folder_not_in_use
 
-        # Cleaning folder not in use before staring to use it
+        # Cleaning folder not in use before starting to use it
         try:
             shutil.rmtree(self._get_folder_path_from_enum(e_target_folder))
         except (NameError, FileNotFoundError):
@@ -95,6 +99,7 @@ class Repo(object):
 
     def __init__(self, repo_url, user_name, token, branch, volume_mount_path,  notify):
         self.firstRun = True
+        self.url_type =
         self.scheme = repo_url.split("://")[0]
         self.repoUrl = repo_url.split("://")[1]
         self.user_name = user_name
@@ -104,9 +109,18 @@ class Repo(object):
         self.repoName = self.extract_folder_name_from_git_url()
         self.apply_folders = ApplyFolders(notify, self.volume_mount_path)
         # Tracking previous and current hash representing repo state.
-        # If both hashes are different then the repo has been updated otherwise nothing happened
+        # If hashes are different then the repo has been updated otherwise nothing happened
         self.previous_hash = None
         self.current_hash = None
+
+    @staticmethod
+    def _get_url_type(repo_url): #@todo display warning when using http based urls
+        if repo_url.startswith("http://") or repo_url.startswith("https://"):
+            return UrlType.HTTP
+        elif repo_url.startswith("git@"):
+            return UrlType.SSH
+        else:
+            raise ValueError("URL did not match syntax criteria : Must start by 'http(s)://' or 'ssh@'")
 
     def _clone_repo(self):
         try:

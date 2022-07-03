@@ -37,6 +37,9 @@ ingress:
 
 nodeSelector: {}
 
+podSecurityContext: {}
+  # fsGroup: 2000
+
 securityContext: {}
   # capabilities:
   #   drop:
@@ -51,14 +54,24 @@ affinity: {}
 
 app:
   git:
-    url:
-    userName:
+    # Git url used to clone/pull the git repository containing the config files to be applied.
+    # If using an ssh url (instead of http(s) auth) then make sure to activate the app.git.sshKey.usePrivateKey option.
+    url: git@github.com:Docteur-RS/collect.git
+    # Git username to clone with
+    userName: docteur-rs
     # Git personnal token 
     personalToken:
     # Git branch to pull where the manifests are stored
     pullBranch: main
     # Refresh git repo any x minutes
     pollingInterval: "5"
+    # You can use a private ssh key instead of the personnal token above. The key will be used to operate the git repository (clone/pull). Note that using a private key is less secure than using the token as it will be stored inside kubernetes and mounted inside Gitfaas. Also there is no security against man in the middle attacks as the remote signature will always be accepted automatically.
+    sshKey:
+      # If set to True, the key will be used instead of the personnalToken 
+      usePrivateKey: true
+      # Name of the secret containing the ssh key to clone/pull the git repository. !!file name inside the secret must be "id_rsa"!!
+      secretName: my-secret
+
   apply:
     # Ressources that will be blocked if appearing in any files to be deployed by gitfaas. Separator is space.
     bannedKubeRessources: "Role RoleBinding ClusterRole ClusterRoleBinding ServiceAccount"

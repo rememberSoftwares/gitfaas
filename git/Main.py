@@ -19,13 +19,31 @@ VOLUME_MOUNT_PATH = os.environ.get("VOLUME_MOUNT_PATH", None)
 GIT_USER_NAME = os.environ.get("GIT_USER_NAME", None)
 GIT_PERSONAL_TOKEN = os.environ.get("GIT_PERSONAL_TOKEN", None)
 GIT_BRANCH = os.environ.get("GIT_PULL_BRANCH", "main")
+GIT_USE_SSH_KEY = os.environ.get("GIT_USE_SSH_KEY", None)
 LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO")
+GIT_STRICT_HOST_KEY_CHECKING = os.environ.get("GIT_STRICT_HOST_KEY_CHECKING", "yes")
 
-logger = logging.getLogger('dev')
+print(str(type(GIT_USE_SSH_KEY)))
+print(str(GIT_USE_SSH_KEY))
+print("fucking log level = " + str(LOG_LEVEL))
+
+#logger = logging.getLogger('dev')
 if LOG_LEVEL not in AVAILABLE_LOG_LEVELS:
     LOG_LEVEL = "INFO"
     print("Invalid value given to LOG_LEVEL. Defaulting to level : INFO")
-logger.setLevel(getattr(logging, LOG_LEVEL))
+print("value à la noix retournée = " + str(getattr(logging, LOG_LEVEL)))
+#logger.setLevel(getattr(logging, LOG_LEVEL))
+
+
+logging.basicConfig()
+logging.getLogger().setLevel(getattr(logging, LOG_LEVEL))
+
+logging.error("-----> ERROR")
+logging.warning("------> WARNING")
+logging.info("------> INFO")
+logging.debug("-----> DEBUG")
+
+logging.info("Running Git (container) version : %s" % os.environ.get("VERSION", "?"))
 
 
 def receive_signal(signal_number, frame):
@@ -44,12 +62,20 @@ def repo_refresh():
     if repo.has_repo_changed():
         notify.manifests_config(config_reader.load_config_from_fs())
 
+
 try:
     check = InputValuesCheck()
-    check.checkPollingTime(POLLING_INTERVAL)
-    check.checkGitUrl(GIT_URL)
-    check.checkWorkPath(VOLUME_MOUNT_PATH)
-    check.checkGitAuth(GIT_USER_NAME, GIT_PERSONAL_TOKEN)
+    print("a")
+    check.check_polling_time(POLLING_INTERVAL)
+    print("b")
+    check.check_git_url(GIT_URL, GIT_USE_SSH_KEY)
+    print("c")
+    check.check_work_path(VOLUME_MOUNT_PATH)
+    print("d")
+    check.check_git_auth(GIT_USER_NAME, GIT_PERSONAL_TOKEN, GIT_USE_SSH_KEY)
+    print("e")
+    check.check_git_strict_host_key_checking(GIT_STRICT_HOST_KEY_CHECKING)
+    print("f")
     POLLING_INTERVAL = int(POLLING_INTERVAL)
 except ValueError:
     print("EXITING !")

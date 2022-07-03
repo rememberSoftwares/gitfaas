@@ -5,6 +5,8 @@ COPY requirements.txt requirements.txt
 RUN pip install -r requirements.txt
 RUN apt-get update && \
     apt-get upgrade -y && \
-    apt-get install -y git curl
+    apt-get install -y git curl nano
 COPY . .
+RUN groupadd -r gitfaas && useradd -r -g gitfaas gitfaas && mkdir /home/gitfaas && chown gitfaas:gitfaas /home/gitfaas && mkdir /home/gitfaas/.ssh
+USER gitfaas
 CMD [ "python3", "-u", "Main.py" ]

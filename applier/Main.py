@@ -1,4 +1,5 @@
 import signal
+import time
 
 from flask import Flask, render_template, jsonify, request, abort
 import sys
@@ -21,7 +22,9 @@ from Report import Report
 
 app = Flask(__name__)
 logging.basicConfig()
-logging.getLogger().setLevel(logging.DEBUG)
+logging.getLogger().setLevel(logging.INFO)
+
+print("value du loggin.info = " + str(logging.INFO))
 
 logging.error("-----> ERROR")
 logging.warning("------> WARNING")
@@ -31,15 +34,16 @@ logging.debug("-----> DEBUG")
 VOLUME_MOUNT_PATH = os.environ.get("VOLUME_MOUNT_PATH", None)
 TOFU_CODE = None
 
-# INIT
-REDIS_PASSWORD = os.environ.get("REDIS_PASSWORD", None)
-if REDIS_PASSWORD is None:
-    print("Redis password is not set. Exiting now..")
-    sys.exit(1)
-r = redis.Redis(host='gitfaas-redis-master', port=6379, db=0, password=REDIS_PASSWORD) #temp test password
 
-r.set("master_error", "False")
-r.set("last_master_error_description", "")
+def wait_for_redis():
+    ping = False
+    while ping == False:
+        try:
+            ping = r.ping()
+        except:
+            pass
+        logging.info(str("Waiting for redis to be alive"))
+        time.sleep(4)
 
 
 def ready_to_use():
@@ -268,6 +272,19 @@ def templatize_yaml(absolute_path, function_uid, message, request_params_to_comp
     with open(absolute_path, 'r') as f:
         return chevron.render(f, request_params_to_complete)
 
+
+logging.info("Running Apply version : %s" % os.environ.get("VERSION", "?"))
+
+# INIT
+REDIS_PASSWORD = os.environ.get("REDIS_PASSWORD", None)
+if REDIS_PASSWORD is None:
+    print("Redis password is not set. Exiting now..")
+    sys.exit(1)
+r = redis.Redis(host='gitfaas-redis-master', port=6379, db=0, password=REDIS_PASSWORD) #temp test password
+wait_for_redis()
+
+r.set("master_error", "False")
+r.set("last_master_error_description", "")
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", debug=True, port=5000)

@@ -1,9 +1,10 @@
 import validators
 
+
 class InputValuesCheck(object):
 
     @staticmethod
-    def checkPollingTime(value):
+    def check_polling_time(value):
         value = int(value)
         if isinstance(value, int) and value > 0:
             return
@@ -12,14 +13,26 @@ class InputValuesCheck(object):
             raise ValueError
 
     @staticmethod
-    def checkGitUrl(value):
-        if validators.url(value):
+    def check_git_url(value, use_ssh_key):
+        """
+        Checking validity of url. Only http URLs can be check using validators. If the mode is ssh then  we can only
+        check for emptiness
+        :param value:
+        :param use_ssh_key:
+        :return:
+        """
+        if use_ssh_key.lower() == "yes":
+            if len(value) <= 0:
+                raise ValueError("SSH Git URL is invalid (evaluated as 0 length)")
             return
         else:
-            raise ValueError
+            if validators.url(value):
+                return
+            else:
+                raise ValueError("HTTP Git URL is invalid (does not look like a url")
 
     @staticmethod
-    def checkWorkPath(value):
+    def check_work_path(value):
         if value is not None and len(value) > 1 and value[0] == "/":
             return
         else:
@@ -28,8 +41,26 @@ class InputValuesCheck(object):
             raise ValueError
 
     @staticmethod
-    def checkGitAuth(username, password):
-        if len(username) > 0 and len(password) > 0:
-            return True
+    def check_git_auth(username, personal_token, use_ssh_key):
+        """
+        If we don't use sshkey then we must have a valid username and personal_token
+        :param username:
+        :param personal_token:
+        :param use_ssh_key:
+        :return:
+        """
+        if use_ssh_key == "yes":
+            return
+        elif use_ssh_key == "no" and len(username) > 0 and len(personal_token) > 0:
+            return
         else:
+            print("Git auth error")
             raise ValueError
+
+    @staticmethod
+    def check_git_strict_host_key_checking(value):
+        if value == "yes" or value == "no":
+            return
+        else:
+            raise ValueError("StrictHostKey env variable must be set to 'yes' or 'no'")
+

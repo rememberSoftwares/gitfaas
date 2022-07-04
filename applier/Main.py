@@ -2,6 +2,7 @@ import signal
 import time
 
 from flask import Flask, render_template, jsonify, request, abort
+from waitress import serve
 import sys
 import json
 import os
@@ -287,4 +288,5 @@ r.set("master_error", "False")
 r.set("last_master_error_description", "")
 
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", debug=True, port=5000)
+    #app.run(host="0.0.0.0", debug=True, port=5000)
+    serve(app, host='0.0.0.0', port=5000)

@@ -7,6 +7,6 @@ RUN apt-get update && \
     apt-get upgrade -y && \
     apt-get install -y git curl nano
 COPY . .
-RUN groupadd -r gitfaas && useradd -r -g gitfaas gitfaas && mkdir /home/gitfaas && chown gitfaas:gitfaas /home/gitfaas && mkdir /home/gitfaas/.ssh
+RUN groupadd -r gitfaas && useradd -r -g gitfaas gitfaas && mkdir /home/gitfaas && chown gitfaas:gitfaas /home/gitfaas && mkdir /home/gitfaas/.ssh && touch /home/gitfaas/.gitconfig && chown gitfaas:gitfaas /home/gitfaas/.gitconfig
 USER gitfaas
 CMD [ "python3", "-u", "Main.py" ]

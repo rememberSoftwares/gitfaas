@@ -91,8 +91,8 @@ class RepoSsh(Repo):
         Repo.__init__(self, repo_url, branch, notify)
 
     def _clone_repo(self):
-        if self.host_key_check is False:
-            Exec.run("git config --global core.sshCommand 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no'")
+        #if self.host_key_check is False:
+        #    Exec.run("git config --global core.sshCommand 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no'")
         try:
             os.mkdir(VOLUME_MOUNT_PATH + "/" + CLONE_FOLDER)
         except FileExistsError:

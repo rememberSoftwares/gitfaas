@@ -25,7 +25,6 @@ app = Flask(__name__)
 logging.basicConfig()
 logging.getLogger().setLevel(logging.INFO)
 
-print("value du loggin.info = " + str(logging.INFO))
 
 logging.error("-----> ERROR")
 logging.warning("------> WARNING")
@@ -85,6 +84,26 @@ def update_folder_name():
 @login_required
 def update_pid():
     r.set("git_pid", int(request.json["pid"]))
+    return jsonify({"error": False})
+
+
+@app.route('/activateMasterError', methods=["POST"])
+@login_required
+def activate_master_error():
+    try:
+        logging.info("entering error mode")
+        print("wtf payload" + str(request.json), file=sys.stderr)
+        logging.info(str(type(request.json)))
+        #json_config = json.loads(request.json)
+        if "reason" not in request.json:
+            logging.error("Missing reason text field")
+            return jsonify({"error": True, "message": "Missing reason text field"})
+        r.set("master_error", "True")
+        r.set("last_master_error_description", request.json["reason"])
+        logging.warning("Application entering error mode with reason : %s" % request.json["reason"])
+    except Exception as e:
+        logging.error("/activateMasterError : Loading JSON failed")
+        return jsonify({"error": True, "message": "Loading JSON failed"})
     return jsonify({"error": False})
 
 
@@ -185,11 +204,6 @@ def publish(topic):
     print("[INFO]: Topic [" + topic + "]", file=sys.stderr)
     print("topic = ", topic, r.get("folder_in_use"), file=sys.stderr)
 
-    logging.error("-----> ERROR")
-    logging.warning("------> WARNING")
-    logging.info("------> INFO")
-    logging.debug("-----> DEBUG")
-
     if request.content_type is None:
         return jsonify(
             {"error": True, "message": "No contentType detected. Please use application/json or text/plain."}), 406
@@ -204,7 +218,6 @@ def publish(topic):
         current_config = json.loads(r.get("current_config"))
         request_uid = "r-" + str(uuid.uuid4())
         r.set(request_uid, "")
-        #report["requestUid"] = request_uid
         report.set_request_uid(request_uid)
         for current_topic in current_config["topics"]:
             if current_topic["name"] == topic:
@@ -218,13 +231,10 @@ def publish(topic):
                         sf.check_for_banned_ressources(yaml_to_apply)
                         sf.check_for_sub_ressource(str(request_params))
                         Kubernetes.apply_from_stdin(yaml_to_apply)
-                        #report["applies"].append({"error": False, "path": absolute_path, "message": "Applied successfully"})
                         report.create_report(False, absolute_path, "Applied successfully")
 
                     except FileNotFoundError as err:
                         print("[WARN]: File to apply not found : " + str(err), file=sys.stderr)
-                        #report["applies"].append({"error": True, "path": absolute_path, "message": str(err)})
-                        #report["error"] = True
                         report.create_report(True, absolute_path, str(err))
 
                     except DangerousKeyword as err:
@@ -281,12 +291,11 @@ REDIS_PASSWORD = os.environ.get("REDIS_PASSWORD", None)
 if REDIS_PASSWORD is None:
     print("Redis password is not set. Exiting now..")
     sys.exit(1)
-r = redis.Redis(host='gitfaas-redis-master', port=6379, db=0, password=REDIS_PASSWORD) #temp test password
+r = redis.Redis(host='gitfaas-redis-master', port=6379, db=0, password=REDIS_PASSWORD)
 wait_for_redis()
 
 r.set("master_error", "False")
 r.set("last_master_error_description", "")
 
 if __name__ == '__main__':
-    #app.run(host="0.0.0.0", debug=True, port=5000)
     serve(app, host='0.0.0.0', port=5000)

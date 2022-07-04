@@ -20,6 +20,7 @@ GIT_BRANCH = os.environ.get("GIT_PULL_BRANCH", "main")
 GIT_USE_SSH_KEY = os.environ.get("GIT_USE_SSH_KEY", None)
 LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO")
 GIT_STRICT_HOST_KEY_CHECKING = os.environ.get("GIT_STRICT_HOST_KEY_CHECKING", "yes")
+APPLY_CONFIG_PATH = os.environ.get("APPLY_CONFIG_PATH", "config.json")
 
 
 
@@ -60,7 +61,10 @@ def repo_refresh():
         return
 
     if repo.has_repo_changed():
-        notify.manifests_config(config_reader.load_config_from_fs())
+        try:
+            notify.manifests_config(config_reader.load_config_from_fs())
+        except GitUpdateError as err:
+            notify.master_error(str(err))
 
 
 try:
@@ -75,7 +79,7 @@ except ValueError as err:
     print("EXITING !")
     sys.exit()
 
-config_reader = ConfigReader()
+config_reader = ConfigReader(APPLY_CONFIG_PATH)
 notify = Notify()
 repo = RepoFactory.create_repo(GIT_REPO_URL, GIT_USER_NAME, GIT_PERSONAL_TOKEN, GIT_BRANCH, GIT_STRICT_HOST_KEY_CHECKING, notify)
 config = None

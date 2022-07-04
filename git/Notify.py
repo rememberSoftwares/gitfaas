@@ -60,9 +60,16 @@ class Notify(object):
             try:
                 print("Waiting for proof of life")
                 res = requests.get(url)
-                print("res = ", str(res))
                 return True
             except Exception as e:
-                print("Not ready... Trying again in 2 sec")
-                time.sleep(2)
+                print("Not ready... Trying again in 5 sec")
+                time.sleep(5)
+
+    def master_error(self, reason):
+        logging.info("reason = %s" % str(reason))
+        url = 'http://127.0.0.1:5000/activateMasterError?tofu=' + self.tofu_code
+        try:
+            requests.post(url, json={"reason": str(reason)})
+        except Exception as e:
+            logging.error(traceback.format_exc())
 

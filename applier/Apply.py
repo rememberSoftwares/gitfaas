@@ -1,3 +1,4 @@
+import logging
 import subprocess
 import base64
 import sys
@@ -17,11 +18,13 @@ class Exec(object):
     @staticmethod
     def run(command):
         output = []
-        print("command = " + command, file=sys.stderr)
+        logging.info("Executing command % s", command)
         p = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        logging.debug("Start : command output")
         for line in p.stdout.readlines():
-            print(line, file=sys.stderr)
+            logging.debug("%s" % line)
             output.append(line.decode("utf-8"))
+        logging.debug("End : command output")
         p.wait()
         return output
 
@@ -30,7 +33,7 @@ class Kubernetes(object):
     @staticmethod
     def apply_from_stdin(yaml_to_apply):
         b64_yaml = base64.b64encode(bytes(yaml_to_apply, 'utf-8'))
-        print("Applying yaml = " + str(yaml_to_apply), file=sys.stderr)
+        logging.debug("Yaml to apply : \n%s" % str(yaml_to_apply))
         output = Exec.run("echo " + b64_yaml.decode("utf-8") + " | base64 -d | kubectl apply -f -")
         for line in output:
             match = re.search(SUCCESSFUL_APPLY_REGEX, line)
@@ -45,17 +48,17 @@ class Kubernetes(object):
 
     @staticmethod
     def delete(config):
-        print("Deleting = " + config.path)
+        logging.info("Deleting %s" % config.path)
         Exec.run("kubectl delete -f " + config.path)
 
     @staticmethod
     def deleteBatch(configs):
         for config in configs:
-            print("Deleting = " + config.path)
+            logging.info("Deleting %s" % config.path)
             Exec.run("kubectl delete " + config.kind + " " + config.name + " -n " + config.namespace)
 
     @staticmethod
     def applyBatch(configs):
         for config in configs:
-            print("Applying file = " + config.path)
+            logging.info("Applying %s" % config.path)
             Exec.run("kubectl apply -f " + config.path)

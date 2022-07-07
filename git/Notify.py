@@ -23,7 +23,7 @@ class Notify(object):
         try:
             res = requests.post(url)
             if res.ok:
-                print(res.json())
+                logging.debug("Response from /tofuAuth : %s" % str(res.json()))
         except Exception as e:
             logging.error(traceback.format_exc())
 
@@ -31,18 +31,18 @@ class Notify(object):
         url = 'http://127.0.0.1:5000/folderInUse?tofu=' + self.tofu_code
         data = {"path": full_path}
         try:
-            print("sending", data)
+            logging.debug("Sending path of folder in use to Apply container : %s", str(data))
             res = requests.post(url, json=data)
             if res.ok:
-                print(res.json())
+                logging.debug("Response from /folderInUse : %s" % str(res.json()))
         except Exception as e:
             logging.error(traceback.format_exc())
 
     def manifests_config(self, config):
         url = 'http://127.0.0.1:5000/configUpdate?tofu=' + self.tofu_code
         try:
-            print("sending", config)
-            x = requests.post(url, json=config)
+            logging.debug("Sending manifest config to Apply container : %s", str(config))
+            requests.post(url, json=config)
         except Exception as e:
             logging.error(traceback.format_exc())
 
@@ -56,13 +56,13 @@ class Notify(object):
     def wait_for_ready_status(self):
         alive = False
         url = 'http://127.0.0.1:5000/alive'
+        logging.info("Waiting for proof of life")
         while alive is False:
             try:
-                print("Waiting for proof of life")
-                res = requests.get(url)
+                requests.get(url)
                 return True
             except Exception as e:
-                print("Not ready... Trying again in 5 sec")
+                logging.info("Not ready... Trying again in 5 sec")
                 time.sleep(5)
 
     def master_error(self, reason):

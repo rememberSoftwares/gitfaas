@@ -92,9 +92,7 @@ def update_pid():
 def activate_master_error():
     try:
         logging.info("entering error mode")
-        print("wtf payload" + str(request.json), file=sys.stderr)
         logging.info(str(type(request.json)))
-        #json_config = json.loads(request.json)
         if "reason" not in request.json:
             logging.error("Missing reason text field")
             return jsonify({"error": True, "message": "Missing reason text field"})
@@ -147,12 +145,12 @@ def refresh():
     return jsonify({"error": False})
 
 """
-Stores inside redis the answer of a faas function.
+Stores inside redis the response of a faas function.
 function_uid's key in redis is init by publish() : If the user gives an unknown uid then the value from redis will be None and the
 request will be denied.
 """
-@app.route('/answer/<function_uid>', methods=["POST"])
-def post_answer(function_uid):
+@app.route('/response/<function_uid>', methods=["POST"])
+def post_response(function_uid):
     if len(function_uid) != 77 or re.match(r"f\-\w+\-\w+\-\w+\-\w+\-\w+\-r-\w+-\w+-\w+-\w+-\w+", function_uid) is False or r.get(function_uid) is None:
         return jsonify({"error": True, "message": "Function uid is invalid. Are you sure you want to GET this ressource and not POST a new one ?"})
 
@@ -172,27 +170,26 @@ def post_answer(function_uid):
 
     b64_msg = base64.b64encode(bytes(message_text, 'utf-8'))
     r.set(function_uid, b64_msg)
-    return jsonify({"error": False, "message": "Answer stored correctly"})
+    return jsonify({"error": False, "message": "Response stored correctly"})
 
 
-@app.route('/answer/<request_uid>', methods=["GET"])
-def get_answer(request_uid):
+@app.route('/response/<request_uid>', methods=["GET"])
+def get_response(request_uid):
     if len(request_uid) != 38 or re.match(r"r-\w+-\w+-\w+-\w+-\w+", request_uid) is False:
-        print("BAM error", file=sys.stderr)
-        return jsonify({"error": True, "message": "Function uid is invalid", "answers": []})
+        return jsonify({"error": True, "message": "Function uid is invalid", "responses": []})
 
     function_uids = r.get(request_uid)
     if function_uids is None:
-        return jsonify({"error": False, "answers": []})
+        return jsonify({"error": False, "responses": []})
 
     function_uids_list = function_uids.decode("utf-8").split("|")
-    answers_aggregation = []
+    responses_aggregation = []
 
     for function_uid in function_uids_list:
-        print("function uid = " + str(function_uid), file=sys.stderr)
-        function_answer = r.get(function_uid)
-        answers_aggregation.append(None if (function_answer is None or function_answer.decode("utf-8") == "") else function_answer.decode("utf-8"))
-    return jsonify({"error": False, "answers": answers_aggregation})
+        logging.debug("Function uid %s" % str(function_uid))
+        function_response = r.get(function_uid)
+        responses_aggregation.append(None if (function_response is None or function_response.decode("utf-8") == "") else function_response.decode("utf-8"))
+    return jsonify({"error": False, "responses": responses_aggregation})
 
 
 @app.route('/publish/<topic>', methods=["POST"])
@@ -201,8 +198,8 @@ def publish(topic):
         return jsonify({"error": True, "message": "App state is in ERROR : " + r.get("last_master_error_description").decode("utf-8")}), 409
 
     report = Report()
-    print("[INFO]: Topic [" + topic + "]", file=sys.stderr)
-    print("topic = ", topic, r.get("folder_in_use"), file=sys.stderr)
+    logging.info("Topic : %s" % topic)
+    logging.debug("Folder in use : %s" % r.get("folder_in_use"))
 
     if request.content_type is None:
         return jsonify(
@@ -234,18 +231,18 @@ def publish(topic):
                         report.create_report(False, absolute_path, "Applied successfully")
 
                     except FileNotFoundError as err:
-                        print("[WARN]: File to apply not found : " + str(err), file=sys.stderr)
+                        logging.warning("File to apply not found : %s" % str(err))
                         report.create_report(True, absolute_path, str(err))
 
                     except DangerousKeyword as err:
-                        print("WARNING: " + str(err), file=sys.stderr)
+                        logging.warning("%s" % str(err))
                         if err.source == Source.REQUEST_PARAM:
                             return jsonify({"error": True, "message": str(err)}), 403
                         elif err.source == Source.MANIFEST:
                             report.create_report(True, absolute_path, "Applying ressource is denied with the following warning : " + str(err))
 
                     except ApplyError as err:
-                        print("[WARN]: " + str(err), file=sys.stderr)
+                        logging.warning("%s" % str(err))
                         report.create_report(True, absolute_path, str(err))
 
         return jsonify(report.to_json()), 202
@@ -263,7 +260,7 @@ In the end the request uid is made of 38 chars and each function uid is made of 
 def add_function_uid_to_request(request_uid):
     current_list_content = r.get(request_uid).decode("utf-8")
     function_uid = "f-" + str(uuid.uuid4()) + "-" + request_uid
-    # We init the function_uid in redis to allow POST /anwser to update this key. POST /answer cannot store anything in a
+    # We init the function_uid in redis to allow POST /anwser to update this key. POST /response cannot store anything in a
     # key that isn't initialized (for security reasons)
     r.set(function_uid, "")
     if current_list_content is None or current_list_content == "":
@@ -275,11 +272,11 @@ def add_function_uid_to_request(request_uid):
 
 def templatize_yaml(absolute_path, function_uid, message, request_params_to_complete, topic):
     b64_msg = base64.b64encode(bytes(message, 'utf-8'))
-    request_params_to_complete["MESSAGE"] = b64_msg.decode("utf-8")
+    request_params_to_complete["PAYLOAD"] = b64_msg.decode("utf-8")
     request_params_to_complete["FUNCTION_UID"] = function_uid
     request_params_to_complete["RANDOM"] = str(uuid.uuid4())
     request_params_to_complete["TOPIC"] = topic
-    print("final = ", request_params_to_complete, file=sys.stderr)
+    logging.debug("Object given to engine during templating of yaml to apply : %s" % str(request_params_to_complete))
     with open(absolute_path, 'r') as f:
         return chevron.render(f, request_params_to_complete)
 
@@ -289,7 +286,7 @@ logging.info("Running Apply version : %s" % os.environ.get("VERSION", "?"))
 # INIT
 REDIS_PASSWORD = os.environ.get("REDIS_PASSWORD", None)
 if REDIS_PASSWORD is None:
-    print("Redis password is not set. Exiting now..")
+    logging.fatal("Redis password is not set. Exiting now...")
     sys.exit(1)
 r = redis.Redis(host='gitfaas-redis-master', port=6379, db=0, password=REDIS_PASSWORD)
 wait_for_redis()

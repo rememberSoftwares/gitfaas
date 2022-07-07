@@ -41,13 +41,9 @@ class SafeMode:
 
     def check_for_banned_ressources(self, haystack):
         haystack = haystack.lower()
-        print("haystack = ", haystack)
         for ban_ressource in self.banned:
-            print("ban ressource = ", ban_ressource, file=sys.stderr)
             regex = BANNED_RESSOURCE_REGEX_TEMPLATE.replace("<KUBE_RESS_REPLACED_AT_RUNTIME>", ban_ressource)
-            print("final regex = ", regex, file=sys.stderr)
             if self._find_match(regex, haystack):
-                print("explosion ! ", file=sys.stderr)
                 raise DangerousKeyword("Dangerous keyword has been detected in payload : " + str(ban_ressource), Source.MANIFEST)
 
     def check_for_sub_ressource(self, haystack):
@@ -57,7 +53,6 @@ class SafeMode:
         :param haystack: Search is performed on the content of this variable
         :return:
         """
-        print("pk il voit pas le kind = ", type(haystack), haystack, file=sys.stderr)
         if self._find_match(SUB_RESSOURCE_REGEX_TEMPLATE, haystack):
             raise DangerousKeyword("A sub ressource has been detected. Word 'kind' is forbidden for security reasons.", Source.REQUEST_PARAM)
         if "\n" in haystack:
@@ -65,7 +60,6 @@ class SafeMode:
 
     def _find_match(self, regex, haystack):
         x = re.search(regex, haystack)
-        print("x = ", str(x), file=sys.stderr)
         if x is None:
             return False
         return True

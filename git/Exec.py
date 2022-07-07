@@ -1,6 +1,8 @@
+import logging
 import re
 import subprocess
 import sys
+
 from Errors import *
 
 FAILED_GIT_PULL_REGEX = "fatal\: couldn\'t find remote|fatal\: repository|fatal\: Remote branch .* not found in upstream"
@@ -9,13 +11,20 @@ FAILED_GIT_PULL_REGEX = "fatal\: couldn\'t find remote|fatal\: repository|fatal\
 class Exec(object):
 
     @staticmethod
-    def run(command):
+    def run(command, show_command=True, info_msg=None):
         output = []
-        print("command = " + command, file=sys.stderr)
+        if show_command:
+            logging.info("Executing command % s", command)
+        else:
+            logging.info("Executing a command but output is disabled")
+        if info_msg is not None:
+            logging.info("Exec info message : %s" % info_msg)
         p = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        logging.debug("Start : command output")
         for line in p.stdout.readlines():
-            print(line, file=sys.stderr)
+            logging.debug("%s" % line)
             output.append(line.decode("utf-8"))
+        logging.debug("End : command output")
         p.wait()
         return output
 

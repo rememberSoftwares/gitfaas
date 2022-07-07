@@ -18,8 +18,10 @@ class RepoFactory(object):
     def create_repo(repo_url, username, personal_token, branch, host_key_check, notify):
         url_type = RepoFactory.get_url_type(repo_url)
         if url_type == UrlType.HTTP:
+            logging.info("Detecting HTTP(S) URL type")
             return RepoHttp(repo_url, username, personal_token, branch, notify)
         elif url_type == UrlType.SSH:
+            logging.info("Detecting SSH URL type")
             return RepoSsh(repo_url, branch, host_key_check, notify)
 
     @staticmethod
@@ -51,7 +53,7 @@ class Repo(object):
         Exec.search_for(output, FAILED_GIT_PULL_REGEX)
 
     def update_repo(self):
-        print("Updating repo")
+        logging.info("Updating repo")
         self.previous_hash = self.current_hash
         if self.firstRun:
             self._clone_repo()
@@ -68,9 +70,9 @@ class Repo(object):
 
     @staticmethod
     def get_current_hash():
-        print("Getting current hash")
+        logging.info("Retrieving current hash")
         command = "git rev-parse HEAD"
-        return (Exec.run(command)[0]).rstrip() #run renvoie un tableau mais moi j'aurais forcement qu'une seule ligne
+        return (Exec.run(command)[0]).rstrip()
 
     def has_repo_changed(self):
         return self.current_hash != self.previous_hash
@@ -83,12 +85,13 @@ class Repo(object):
 class RepoSsh(Repo):
 
     def __init__(self, repo_url, branch, host_key_check, notify):
+        Repo.__init__(self, repo_url, branch, notify)
         self.repo_url = repo_url
         self.branch = branch
         self.host_key_check = True if host_key_check == "yes" else False
         self.repo_name = self.extract_folder_name_from_git_url()
         logging.info("Extracted repo name : [%s]" % str(self.repo_name))
-        Repo.__init__(self, repo_url, branch, notify)
+
 
     def _clone_repo(self):
         #if self.host_key_check is False:
@@ -112,15 +115,17 @@ class RepoSsh(Repo):
 class RepoHttp(Repo):
 
     def __init__(self, repo_url, user_name, token, branch,  notify):
+        Repo.__init__(self, repo_url, branch, notify)
         self.firstRun = True
+        logging.info("avant le split repo url qui ne devrait pas avoir https = %s" % repo_url)
         self.scheme = repo_url.split("://")[0]
         self.repo_url = repo_url.split("://")[1]
+        logging.info("repo url qui ne devrait pas avoir https = %s" % self.repo_url)
         self.user_name = user_name
         self.token = token
         self.branch = branch
         self.repo_name = self.extract_folder_name_from_git_url()
         logging.info("Extracted repo name : [%s]" % self.repo_name)
-        Repo.__init__(self, repo_url, branch, notify)
 
     def _clone_repo(self):
         try:

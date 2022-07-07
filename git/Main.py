@@ -22,18 +22,9 @@ LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO")
 GIT_STRICT_HOST_KEY_CHECKING = os.environ.get("GIT_STRICT_HOST_KEY_CHECKING", "yes")
 APPLY_CONFIG_PATH = os.environ.get("APPLY_CONFIG_PATH", "config.json")
 
-
-
-print(str(type(GIT_USE_SSH_KEY)))
-print(str(GIT_USE_SSH_KEY))
-print("fucking log level = " + str(LOG_LEVEL))
-
-#logger = logging.getLogger('dev')
 if LOG_LEVEL not in AVAILABLE_LOG_LEVELS:
     LOG_LEVEL = "INFO"
-    print("Invalid value given to LOG_LEVEL. Defaulting to level : INFO")
-print("value à la noix retournée = " + str(getattr(logging, LOG_LEVEL)))
-#logger.setLevel(getattr(logging, LOG_LEVEL))
+    print("WARNING:root:Invalid value given to LOG_LEVEL. Defaulting to level : INFO")
 
 
 logging.basicConfig()
@@ -48,7 +39,7 @@ logging.info("Running Git (container) version : %s" % os.environ.get("VERSION", 
 
 
 def receive_signal(signal_number, frame):
-    print('Received:', signal_number)
+    logging.info('Received signal to refresh from Apply container: %s' % str(signal_number))
     if signal_number == 10:
         repo_refresh()
 
@@ -76,7 +67,7 @@ try:
     POLLING_INTERVAL = int(POLLING_INTERVAL)
 except ValueError as err:
     logging.info(err)
-    print("EXITING !")
+    logging.fatal("Exiting...")
     sys.exit()
 
 config_reader = ConfigReader(APPLY_CONFIG_PATH)
@@ -91,5 +82,5 @@ signal.signal(signal.SIGUSR1, receive_signal)
 
 while True:
     repo_refresh()
-    print("Waiting !")
+    logging.info("Waiting specified time : %s seconds" % (POLLING_INTERVAL * 60))
     time.sleep(POLLING_INTERVAL * 60)

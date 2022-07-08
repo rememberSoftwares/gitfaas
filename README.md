@@ -1,4 +1,4 @@
-<img src="https://user-images.githubusercontent.com/6358314/177986268-0a99239b-57d1-4084-991f-04f8c562cf3f.png" width="900" height="700">
+<img src="https://user-images.githubusercontent.com/6358314/177986268-0a99239b-57d1-4084-991f-04f8c562cf3f.png" width="900" height="400">
 
 # gitfaas
 A mix between GitOps and FAAS to create data pipelines on Kubernetes

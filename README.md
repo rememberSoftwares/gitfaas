@@ -22,41 +22,26 @@ Do not use in production before BETA. Everything works but is you try to break i
 * **Scale to 0** : When no function is invoked, no pod is created. One request makes one pod and one optional volume. When finished the pod and the volume are both deleted. This way you don't have to pay for unused resources.
 * **Retry** : When your serverless function need to restart you can trigger the recreation of the pod.
 * **Topics** : Trigger functions using topics (the same way as you would using NATS/RabbitMQ). A function can listen to multiple topics.
+* **Responses** : Your lambdas can post the result independant of the time they take. No timeouts to configure. All results are stored and can be viewed at any time. 
+* **Industry standards security** : Using RBAC, minimal images, preventing configuration injection.
+* **Integration with any languages** : You don't have to update your codebase (only needs access to ENV and a network lib).
+* **Apply whatever you want** : Gitfaas was meant to apply lambdas but you can give it any YAML manifest to apply.
 
 ## Installation
 
-Gitfaas uses a kube config file to interact with the API-server. For now, we must start by creating a secret containing this configuration. In future updates we'll need to find a better way.  
-Remember that you can control the kube config permissions by using service accounts and RBAC.  
-
-In this example we will use the kube config present in your ~/.kube on your filesystem, assuming that your machine has access to the targeted Kubernetes cluster.  
-
-```
- kubectl create secret generic kubeconfig  --from-file=~/.kube/config -n <REPLACE_NAMESPACE> -o yaml --dry-run=client > secret.yaml
- kubectl apply -f secret.yaml
-```
-In the above replace <REPLACE_NAMESPACE> with the targeted namespace.  
-
-Now let's configure and install Gitfaas.   
+Cloning this repository :  
 ```
 git clone https://github.com/rememberSoftwares/gitfaas.git
-cd gitfaas
+cd gitfaas\
 ```
-Edit `deploy.yaml` and replace all `<REPLACE>` using the correct values.  
+Install using Helm : 
+You need at least a Git server URL, a username and a way to clone the repo. Here we use a personnal token token but you can edit the `helm_chart/values.yaml` to activate SSH keys instead.  
+```
+helm install gitfaas . -n gitfaas --create-namespace --set app.git.url="<YOUR_REPO_URL>" --set app.git.userName="<A_GIT_USERNAME>" --set app.git.http.personalToken="A_GIT_PERSONNAL_TOKEN"
+```
+More information on the git personal token : [here](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token)  
 
-```
-        env:
-        - name: GIT_URL
-          value: "<REPLACE>"    # <= Your private repository URL containing the configurations that can be apply by gitfaas
-        - name: GIT_USER_NAME
-          value: "<REPLACE>"    # <= A git username that can clone/pull the repository
-        - name: GIT_PERSONAL_TOKEN
-          value: "<REPLACE>"    # <= A personal token (revocable) acting as your password.
-```
-More information on the git personal token : [here](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token)
-
-```
-kubectl apply -f deploy.yaml -n <REPLACE_NAMESPACE>
-```
+Need help installing ? Follow this in depth tutorial.
 
 ## Basic configuration
 

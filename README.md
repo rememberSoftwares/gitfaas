@@ -1,5 +1,5 @@
 <p align="center"><img src="https://user-images.githubusercontent.com/6358314/177987795-0b817149-14f0-45c2-8d50-d22df8629c20.png" width="500"></p>
-<p align="center"><b>Easily deploy FAAS lambdas or any ressources on Kubernetes using GitOps</b></p>
+<p align="center"><b>Easily deploy FAAS lambdas or any ressources on Kubernetes using GitOps and REST API</b></p>
 
 <hr>
 

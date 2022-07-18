@@ -4,6 +4,14 @@
 <hr>
 
 # gitfaas
+
+A framework for serverless functions on Kubernetes.  
+Gitfaas can apply any Kubernetes manifest using its REST API. It emphases on providing long running Kubernetes jobs and gives you full control over the manifest content.  
+
+
+Write short-lived functions in any language, and map them to HTTP requests (or other event triggers).
+
+Deploy functions instantly with one command. There are no containers to build, and no Docker registries to manage.
 A mix between GitOps and FAAS to create data pipelines on Kubernetes
 
 Gitfaas allows you to apply Kubernetes manifests by making HTTP requests. Even though it can apply anything it focuses on making pipelines of long running jobs that can start other jobs themselves. It's the perfect match to create data pipelines (Collect, uncompress, convert data, etc.).

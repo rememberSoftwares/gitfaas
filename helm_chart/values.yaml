@@ -1,0 +1,133 @@
+# Default values for gitfaas.
+# This is a YAML-formatted file.
+
+image:
+  repository: docker.io
+  pullPolicy: Always
+  apply: 0.0.9
+  git: 0.0.6
+
+rbac:
+  # Either restricts manifests to be deployed into the gitfaas namespace or in any namespace.
+  # For security reasons it is recommanded to use 'namespace'. You could also extend the RBAC templates manually to allow other namespaces.
+  # Value can either be ["clusterWide" | "namespaced"]
+  scope: "namespaced"
+
+app:
+  git:
+    # Git url used to clone/pull the git repository containing the config files to be applied.
+    # If using a ssh url then make sure to activate the app.git.sshKey.usePrivateKey option.
+    # Valid URLs must start with [http | https | git@]
+    url: <MUST_BE_REPLACED>
+
+    # Git username account to use.
+    userName: <MUST_BE_REPLACED>
+
+    # Git branch to pull where the manifests are stored.
+    pullBranch: main
+
+    # Refresh git repo any x minutes.
+    pollingInterval: "5"
+
+    # Minimum log level, can either be INFO, DEBUG or WARN.
+    logLevel: INFO
+
+    # You can use an HTTP URL with a personal token provided by the GIT server.
+    # Github documentation ie : https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token
+    http:
+
+      # Git personal token to authenticate to the remove Git server.
+      # Leave empty if you wish to use ssh mode instead.
+      personalToken: <SHOULD_BE_REPLACED_IF_NOT_USING_SSH>
+
+    # You can use a private ssh key instead of the personal token above. The key will be used to operate the git repository (clone/pull).
+    # If using private key, we recommend to set appropriate knowHosts signatures underneath. Setting 'strictHostKeyChecking' to 'no' is available for quick and dirty.
+    sshKey:
+
+      # If set to "yes", the ssh key will be used INSTEAD of the personalToken.
+      # If set to "no", you don't have to care about any values beneath.
+      # Valid values are ["yes" | "no"].
+      usePrivateKey: "no"
+
+      # Name of the secret containing the ssh key to clone/pull the git repository. !!file name inside the secret must be "id_rsa"!!
+      # $ kubectl create secret generic gitfaas-ssh-key --from-file=id_rsa=<path_to_private_key> -n <namespace>
+      privKeySecretName: gitfaas-ssh-key
+
+      # To prevent man in the middle attacks you should set the signature of the remote git server here.
+      # If you don't care set 'strictHostKeyChecking' to 'no' beneath.
+      # We have included the following examples for Github.
+      # Please remove, update those values or replace by your own.
+      knowHostsMultiLine: |
+        github.com ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAq2A7hRGmdnm9tUDbO9IDSwBK6TbQa+PXYPCPy6rbTrTtw7PHkccKrpp0yVhp5HdEIcKr6pLlVDBfOLX9QUsyCOV0wzfjIJNlGEYsdlLJizHhbn2mUjvSAHQqZETYP81eFzLQNnPHt4EVVUh7VfDESU84KezmD5QlWpXLmvU31/yMf+Se8xhHTvKSCZIFImWwoG6mbUoWf9nzpIoaSjB+weqqUUmpaaasXVal72J+UX2B+2RPW3RcT0eOzQgqlJL3RKrTJvdsjE3JEAvGq3lGHSZXy28G3skua2SmVi/w4yCE6gbODqnTWlg7+wC604ydGXA8VJiS5ap43JXiUFFAaQ==
+        github.com ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBEmKSENjQEezOmxkZMy7opKgwFB9nkt5YRrYMjNuG5N87uRgg6CLrbo5wAdT/y6v0mKV0U2w0WZ2YB/++Tpockg=
+        github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl
+
+      # If you don't care about man in the middle attacks you can tell Gitfaas to accept any remote signatures while cloning/pulling
+      strictHostKeyChecking: "yes"
+
+  apply:
+    # Kubernetes ressources that will be blocked if appearing in any files to be deployed by gitfaas. Separator is space.
+    bannedKubeRessources: Role RoleBinding ClusterRole ClusterRoleBinding ServiceAccount Ingress
+
+    # Minimum log level, can either be INFO, DEBUG or WARN.
+    logLevel: INFO
+
+    # Relative path inside the GIT repository
+    configurationPath: "config.json"
+
+service:
+  type: ClusterIP
+  port: 5000
+
+imagePullSecrets: []
+
+install:
+  replicas: 1
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+  hosts:
+    - host: chart-example.local
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+
+nodeSelector: {}
+
+podSecurityContext:
+  # fsGroup: 2000
+  runAsUser: 999
+  runAsGroup: 999
+  fsGroup: 999
+
+securityContext:
+  # capabilities:
+  #   drop:
+  #   - ALL
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  allowPrivilegeEscalation: false
+
+tolerations: []
+
+affinity: {}
+
+redis:
+  auth:
+    # Maybe update this. Even though redis in only used to store runtime config and NOT the repo files
+    password: thisisthepassword
+  master:
+    persistence:
+      enabled: false
+  replica:
+    replicaCount: 0
+    persistence:
+      enabled: false

@@ -326,7 +326,7 @@ spec:
 * Retry is deactivated (set to 0) so if the job fails it won't reboot.
 
 
-## Starting a job
+## Launching a function via the REST API
 
 To start a job use the following routes:
 

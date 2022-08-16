@@ -5,7 +5,7 @@ metadata:
   name: gitfaas-rl
 rules:
 - apiGroups: [""]
-  resources: ["pods", "services"]
+  resources: ["pods"]
   verbs: ["patch", "create", "update", "get", "list"]
 - apiGroups: ["apps"]
   resources: ["deployments"]

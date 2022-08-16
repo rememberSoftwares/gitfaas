@@ -170,6 +170,7 @@ def post_response(function_uid):
 
     b64_msg = base64.b64encode(bytes(message_text, 'utf-8'))
     r.set(function_uid, b64_msg)
+    logging.info("Setting response for function %s" % function_uid)
     return jsonify({"error": False, "message": "Response stored correctly"})
 
 
@@ -207,7 +208,10 @@ def publish(topic):
     elif request.content_type.startswith('application/json'):
         message_text = json.dumps(request.json)
     elif request.content_type.startswith('text/plain'):
-        message_text = str(request.data)
+        logging.info(str(type(request.data)))
+        logging.info(str(request.data))
+        logging.info(str(request.data.decode('utf-8')))
+        message_text = str(request.data.decode('utf-8')) #ici ca fait du paté. Ca fait b'ma_string'
     else:
         return jsonify({"error": True, "message": "No contentType detected. Please use application/json or text/plain."}), 406
 

@@ -6,8 +6,9 @@ import json
 
 def main():
 
-    # Retrieving the base64 payload and the function UID (UID that identifies the current run of this lambda)
+    # Retrieving the base64 payload (the input message sent to this function) 
     b64_message = os.environ.get('PAYLOAD', None)
+    # Retrieving the function UID (UID that identifies the current run of this function and allows to distinct multiple runs of the same function)
     function_uid = os.environ.get('FUNCTION_UID', None)
 
     if b64_message is None:

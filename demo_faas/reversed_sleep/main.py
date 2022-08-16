@@ -1,9 +1,13 @@
-import time
 import requests
 import os
 import base64
 import json
 
+# This function/lambda replaces a word inside a string. It takes 3 arguments.
+# * A source message to work on.
+# * A word that will be replaced
+# * A word to replace with
+#
 # Ie: Expected payload format in input message
 # {
 #    "source": "I like bananas",

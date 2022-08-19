@@ -211,7 +211,7 @@ def publish(topic):
         logging.info(str(type(request.data)))
         logging.info(str(request.data))
         logging.info(str(request.data.decode('utf-8')))
-        message_text = str(request.data.decode('utf-8')) #ici ca fait du paté. Ca fait b'ma_string'
+        message_text = str(request.data.decode('utf-8'))
     else:
         return jsonify({"error": True, "message": "No contentType detected. Please use application/json or text/plain."}), 406
 

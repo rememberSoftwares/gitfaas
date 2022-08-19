@@ -56,7 +56,7 @@ class Notify(object):
     def wait_for_ready_status(self):
         alive = False
         url = 'http://127.0.0.1:5000/alive'
-        logging.info("Waiting for proof of life")
+        logging.info("Waiting for proof of life from Apply container")
         while alive is False:
             try:
                 requests.get(url)

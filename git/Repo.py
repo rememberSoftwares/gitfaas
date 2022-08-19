@@ -2,15 +2,15 @@ import logging
 import re
 import subprocess
 import os
-import sys
 from enum import Enum, auto
-import shutil
 
 from Config import CLONE_FOLDER, VOLUME_MOUNT_PATH
 from ApplyFolders import UrlType, ApplyFolders
-from Exec import Exec, FAILED_GIT_PULL_REGEX
+from Exec import Exec
 from Errors import *
 
+GIT_PULL_NOT_FOUND_REGEX = "fatal\: couldn\'t find remote|fatal\: repository|fatal\: Remote branch .* not found in upstream"
+GIT_PULL_UNAUTHORIZED_REGEX = "Authentication failed for"
 
 class RepoFactory(object):
 
@@ -50,7 +50,7 @@ class Repo(object):
     def _pull_repo(self):
         command = "git pull origin " + self.branch
         output = Exec.run(command)
-        Exec.search_for(output, FAILED_GIT_PULL_REGEX)
+        Repo.check_git_errors(output)
 
     def update_repo(self):
         logging.info("Updating repo")
@@ -63,6 +63,16 @@ class Repo(object):
 
         if self.has_repo_changed():
             self.apply_folders.copy_content(self.repoName)
+
+    @staticmethod
+    def check_git_errors(output):
+        """
+        Parsing through the output og the git command and searches for error messages.
+        Raises GitUpdateError if an error is detected
+        :param output: The output the command returned by exec
+        """
+        Exec.search_for(output, GIT_PULL_NOT_FOUND_REGEX)
+        Exec.search_for(output, GIT_PULL_UNAUTHORIZED_REGEX)
 
     def to_full_path(self, e_folder):
         # @todo check type of e_folder
@@ -103,7 +113,7 @@ class RepoSsh(Repo):
         os.chdir(VOLUME_MOUNT_PATH + "/" + CLONE_FOLDER)
         command = "git clone -b " + self.branch + " --single-branch " + self.repo_url
         output = Exec.run(command)
-        Exec.search_for(output, FAILED_GIT_PULL_REGEX)
+        Repo.check_git_errors(output)
 
         try:
             os.chdir(VOLUME_MOUNT_PATH + "/" + CLONE_FOLDER + "/" + self.repo_name)
@@ -117,10 +127,8 @@ class RepoHttp(Repo):
     def __init__(self, repo_url, user_name, token, branch,  notify):
         Repo.__init__(self, repo_url, branch, notify)
         self.firstRun = True
-        logging.info("avant le split repo url qui ne devrait pas avoir https = %s" % repo_url)
         self.scheme = repo_url.split("://")[0]
         self.repo_url = repo_url.split("://")[1]
-        logging.info("repo url qui ne devrait pas avoir https = %s" % self.repo_url)
         self.user_name = user_name
         self.token = token
         self.branch = branch
@@ -134,8 +142,9 @@ class RepoHttp(Repo):
             pass
         os.chdir(VOLUME_MOUNT_PATH + "/" + CLONE_FOLDER)
         command = "git clone -b " + self.branch + " --single-branch " + self.scheme + "://" + self.user_name + ":" + self.token + "@" + self.repo_url
-        output = Exec.run(command)
-        Exec.search_for(output, FAILED_GIT_PULL_REGEX)
+        redacted_command_for_logs = "git clone -b " + self.branch + " --single-branch " + self.scheme + "://" + self.user_name + ":" + "[REDACTED TO LIMIT TOKEN LEAKING ISSUES DURING LOGGING]" + "@" + self.repo_url
+        output = Exec.run(command, show_command=False, info_msg="Redacted command looks like this :" + redacted_command_for_logs)
+        Repo.check_git_errors(output)
 
         try:
             os.chdir(VOLUME_MOUNT_PATH + "/" + CLONE_FOLDER + "/" + self.repo_name)

@@ -5,8 +5,6 @@ import sys
 
 from Errors import *
 
-FAILED_GIT_PULL_REGEX = "fatal\: couldn\'t find remote|fatal\: repository|fatal\: Remote branch .* not found in upstream"
-
 
 class Exec(object):
 

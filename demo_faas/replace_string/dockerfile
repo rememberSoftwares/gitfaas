@@ -9,4 +9,4 @@ RUN apt-get update && \
 COPY . .
 RUN groupadd -r demo && useradd -r -g demo demo && mkdir /home/demo && chown demo:demo /home/demo 
 USER demo
-CMD [ "python3", "-u", "Main.py" ]
+CMD [ "python3", "-u", "main.py" ]

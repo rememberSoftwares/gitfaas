@@ -30,18 +30,18 @@ def main():
     str_message = base64.b64decode(b64_message).decode("utf-8")
     json_message = json.loads(str_message)
     
-    # Creating a new string in wich we replaced the term contained in "str-to-replace" with the one from "replace-with" 
+    # Creating a new string using python's .replace() method. We replace the term contained in "str-to-replace" with the one from "replace-with"
     replaced_string = json_message["source"].replace(json_message["str-to-replace"], json_message["replace-with"])
     print("Replaced string is : %s" % replaced_string)
 
     # Returning a response to Gitfaas
-    url = "http://gitfaas:5000/response/" + function_uid # We send back our function_UID so that Gitfaas knows who is talking to him.
+    url = "http://gitfaas:5000/response/" + function_uid # We append our function_UID so that Gitfaas knows who is talking to him.
     print("Responding on = %s" % url)
     
     try:
-        # We send a response to Gitfaas containing the replaced string. You must define content type header as 'text/plain' or 'application/json' depending on what you are sending (automatic using Request lib here)
-        ret = requests.post(url, data=replaced_string)
-        print("Response return = %s" % ret)
+        # We send a response to Gitfaas containing the replaced string. You must define content type header as 'text/plain' or 'application/json' depending on what you are sending
+        ret = requests.post(url, data=replaced_string, headers={'Content-type': 'text/plain'})
+        print("Response return = %s" % ret.text)
 
     except Exception as e:
         print("Error responding : %s" % str(e))

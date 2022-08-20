@@ -2,7 +2,6 @@ import os
 import signal
 import time
 import sys
-import sh
 import logging
 
 from InputValuesCheck import *

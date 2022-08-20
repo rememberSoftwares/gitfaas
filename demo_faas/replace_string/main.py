@@ -39,7 +39,7 @@ def main():
     print("Responding on = %s" % url)
     
     try:
-        # We send a response to Gitfaas containing the replaced string. You must define content type header as 'text/plain' or 'application/json' depending on what you are sending
+        # We send a response to Gitfaas containing the replaced string. Setting content type to text/plain or application/json is a good practice.
         ret = requests.post(url, data=replaced_string, headers={'Content-type': 'text/plain'})
         print("Response return = %s" % ret.text)
 

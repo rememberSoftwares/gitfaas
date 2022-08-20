@@ -21,18 +21,28 @@ from Apply import ApplyError
 from ConfigValidator import *
 from Report import Report
 
-app = Flask(__name__)
-logging.basicConfig()
-logging.getLogger().setLevel(logging.INFO)
+# Logging options for the app. Choosing for instance INFO will only print logging.info(...) and above outputs
+AVAILABLE_LOG_LEVELS = ["DEBUG", "INFO", "WARN"]
+#VOLUME_MOUNT_PATH = os.environ.get("VOLUME_MOUNT_PATH", None)
+# Contains an auto-generated password sent by the Git container at startup. This should not be modified during runtime.
+g_tofu_code = None
 
+# Getting current log level
+LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO")
+if LOG_LEVEL not in AVAILABLE_LOG_LEVELS:
+    LOG_LEVEL = "INFO"
+    print("WARNING:root:Invalid value given to LOG_LEVEL. Defaulting to level : INFO")
+logging.basicConfig()
+logging.getLogger().setLevel(getattr(logging, LOG_LEVEL))
+
+app = Flask(__name__)
 
 logging.error("-----> ERROR")
 logging.warning("------> WARNING")
 logging.info("------> INFO")
 logging.debug("-----> DEBUG")
 
-VOLUME_MOUNT_PATH = os.environ.get("VOLUME_MOUNT_PATH", None)
-TOFU_CODE = None
+
 
 
 def wait_for_redis():
@@ -53,7 +63,7 @@ def ready_to_use():
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if request.args.get('tofu') == TOFU_CODE:
+        if request.args.get('tofu') == g_tofu_code:
             return f(*args, **kwargs)
         else:
             abort(404)
@@ -67,8 +77,8 @@ def alive():
 
 @app.route('/tofuAuth', methods=["POST"])
 def tofu_auth():
-    global TOFU_CODE
-    TOFU_CODE = request.args.get('tofu')
+    global g_tofu_code
+    g_tofu_code = request.args.get('tofu')
     return jsonify({"alive": True})
 
 
@@ -202,20 +212,33 @@ def publish(topic):
     logging.info("Topic : %s" % topic)
     logging.debug("Folder in use : %s" % r.get("folder_in_use"))
 
-    if request.content_type is None:
-        return jsonify(
-            {"error": True, "message": "No contentType detected. Please use application/json or text/plain."}), 406
-    elif request.content_type.startswith('application/json'):
-        message_text = json.dumps(request.json)
-    elif request.content_type.startswith('text/plain'):
+    logging.info("contentype = %s" % str(request.content_type))
+
+    if request.content_type is None or request.content_type.startswith('text/plain'):
+        logging.info("ca passe dans None ou text plain")
         logging.info(str(type(request.data)))
         logging.info(str(request.data))
         logging.info(str(request.data.decode('utf-8')))
         message_text = str(request.data.decode('utf-8'))
+
+    elif request.content_type.startswith('application/json'):
+        logging.info("ca passe dans app json")
+        try:
+            logging.info("attention aux yeux")
+            message_text = json.dumps(request.json)
+            logging.info("bam ?")
+        except Exception as e:
+            logging.error("Incoming request treated as JSON by Flask. Error while converting json to string : %s" % str(e))
+            return jsonify({"error": True, "message": "Incorrect JSON : " + str(e)}), 400
+
     else:
-        return jsonify({"error": True, "message": "No contentType detected. Please use application/json or text/plain."}), 406
+        logging.info("ca passe dans le else")
+        logging.info("data = %s" % str(request.data))
+        logging.info("form = %s" % str(request.form))
+        return jsonify({"error": True, "message": "Given content type is not supported :" + str(request.content_type) + ". Please use application/json, text/plain or nothing"}), 406
 
     if ready_to_use():
+        logging.info("ca passe !")
         current_config = json.loads(r.get("current_config"))
         request_uid = "r-" + str(uuid.uuid4())
         r.set(request_uid, "")

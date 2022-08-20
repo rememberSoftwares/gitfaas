@@ -12,7 +12,7 @@ class Notify(object):
     def __init__(self):
         """
         @tofu_code is generated here and will be used to authenticate against the Apply container.
-        First call will give this tofu_code to Apply container. All subsequent calls must give have the tofu code to be
+        First call will give this tofu_code to Apply container. All subsequent calls must also give this code to be
         authenticated. Clients that do not give the right code will receive 404 (preventing attackers to discover too
         much of the API).
         """

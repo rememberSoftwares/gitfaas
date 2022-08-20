@@ -4,8 +4,12 @@
 image:
   repository: docker.io
   pullPolicy: Always
-  apply: 0.0.9
-  git: 0.0.6
+  apply:
+    name: gitfaas-apply-dev
+    version: 0.0.9
+  git:
+    name: gitfaas-git-dev
+    version: 0.0.6
 
 rbac:
   # Either restricts manifests to be deployed into the gitfaas namespace or in any namespace.

@@ -1,0 +1,147 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gitfaas
+  labels:
+    app: gitfaas
+spec:
+  replicas: {{ .Values.install.replicas }}
+  selector:
+    matchLabels:
+      app: gitfaas
+  template:
+    metadata:
+      labels:
+        app: gitfaas
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: gitfaas
+      shareProcessNamespace: true
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+      - name: git
+        image: wingardiumleviosa/{{ .Values.image.git.name }}:{{ .Values.image.git.version }}
+        securityContext:
+          {{- toYaml .Values.securityContext | nindent 10 }}
+        env:
+        - name: GIT_URL
+          value: {{ required "A valid git repo url is required" .Values.app.git.url }}
+        - name: GIT_USER_NAME
+          value: {{ required "A valid git username is required" .Values.app.git.userName }}
+        - name: GIT_PERSONAL_TOKEN
+          value: {{ .Values.app.git.http.personalToken }}
+        - name: GIT_PULL_BRANCH
+          value: {{ required "A valid git branch (ex: master, main etc) is required" .Values.app.git.pullBranch }}
+        - name: APPLY_CONFIG_PATH
+          value: {{ required "A valid relativ path ex: 'config.json' would point to a file placed in the root directory" .Values.app.apply.configurationPath }}
+        - name: GIT_USE_SSH_KEY
+          value: "{{ .Values.app.git.sshKey.usePrivateKey }}"
+        - name: POLLING_INTERVAL
+          value: "{{ required "A valid polling interval is required (5 (m) is a good starting point)" .Values.app.git.pollingInterval }}"
+        - name: GIT_STRICT_HOST_KEY_CHECKING
+          value: "{{ .Values.app.git.sshKey.strictHostKeyChecking }}"
+        - name: LOG_LEVEL
+          value: {{ .Values.app.git.logLevel }}
+        - name: VERSION
+          value: {{ .Values.image.git.version }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+        - containerPort: 5000
+        livenessProbe:
+          httpGet:
+            path: /alive
+            port: 5000
+          initialDelaySeconds: 30
+          periodSeconds: 30
+        volumeMounts:
+        - name: shared-data
+          mountPath: /pod-data
+        {{- if eq .Values.app.git.sshKey.usePrivateKey "yes" }}
+        - name: ssh-key
+          mountPath: /home/gitfaas/.ssh/id_rsa
+          subPath: id_rsa
+        - name: known-hosts
+          mountPath: /home/gitfaas/.ssh/known_hosts
+          subPath: known_hosts
+        {{- end }}
+        {{- if eq .Values.app.git.sshKey.strictHostKeyChecking "no" }}
+        - name: strict-host-key-checking
+          mountPath: /home/gitfaas/.gitconfig
+          subPath: ".gitconfig"
+        {{- end }}
+
+      - name:  apply
+        image: wingardiumleviosa/{{ .Values.image.apply.name }}:{{ .Values.image.apply.version }}
+        securityContext:
+          {{- toYaml .Values.securityContext | nindent 10 }}
+        env:
+        - name: BANNED_KUBE_RESS
+          value: {{ .Values.app.apply.bannedKubeRessources }}
+        - name: REDIS_PASSWORD
+          value: {{ .Values.redis.auth.password }}
+        - name: VOLUME_MOUNT_PATH
+          value: "/pod-data"
+        - name: LOG_LEVEL
+          value: {{ .Values.app.apply.logLevel }}
+        - name: VERSION
+          value: {{ .Values.image.apply.version }}
+
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+        - containerPort: 5000
+        volumeMounts:
+        - name: shared-data
+          mountPath: /pod-data
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+      volumes:
+      - name: shared-data
+        emptyDir: {}
+      {{- if eq .Values.app.git.sshKey.usePrivateKey "yes" }}
+      - name: ssh-key
+        secret:
+          secretName: {{ .Values.app.git.sshKey.privKeySecretName }}
+          defaultMode: 0600
+      - name: known-hosts
+        configMap:
+          name: known-hosts-gitfaas
+          defaultMode: 0644
+      {{- end }}
+      {{- if eq .Values.app.git.sshKey.strictHostKeyChecking "no" }}
+      - name: strict-host-key-checking
+        configMap:
+          name: no-strict-host-checking
+          defaultMode: 0644
+      {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name:  gitfaas
+  labels:
+    app: gitfaas
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+  - port: {{ .Values.service.port }}
+    targetPort: {{ .Values.service.port }}
+    protocol: TCP
+    name: http
+  selector:
+    app: gitfaas
+

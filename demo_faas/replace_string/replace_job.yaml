@@ -9,7 +9,7 @@ spec:
     spec:
       containers:
       - name: reverse
-        image: demo-gitfaas-replace:0.0.1
+        image: wingardiumleviosa/demo-gitfaas-replace:0.0.1
         env:
         - name: PALYLOAD
           value: "{{PAYLOAD}}"  # Will be replaced at runtime by the message sent to this lambda

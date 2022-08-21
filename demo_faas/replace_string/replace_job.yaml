@@ -1,15 +1,16 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: reverse-{{RANDOM}} # Mandatory to always have a fresh job name
+  name: replace-{{RANDOM}} # Mandatory to always have a fresh job name
 spec:
   ttlSecondsAfterFinished: 3600
   backoffLimit: 1
   template:
     spec:
       containers:
-      - name: reverse
+      - name: replace
         image: wingardiumleviosa/demo-gitfaas-replace:0.0.1
         env:
         - name: PALYLOAD
           value: "{{PAYLOAD}}"  # Will be replaced at runtime by the message sent to this lambda
+      restartPolicy: Never

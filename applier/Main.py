@@ -164,16 +164,18 @@ def post_response(function_uid):
     if len(function_uid) != 77 or re.match(r"f\-\w+\-\w+\-\w+\-\w+\-\w+\-r-\w+-\w+-\w+-\w+-\w+", function_uid) is False or r.get(function_uid) is None:
         return jsonify({"error": True, "message": "Function uid is invalid. Are you sure you want to GET this ressource and not POST a new one ?"})
 
-    if request.content_type is None:
-        return jsonify(
-            {"error": True, "message": "No contentType detected. Please use application/json or text/plain."})
+    elif request.content_type is None or request.content_type.startswith('text/plain'):
+        message_text = str(request.data.decode('utf-8'))
+
     elif request.content_type.startswith('application/json'):
-        message_text = json.dumps(request.json)
-    elif request.content_type.startswith('text/plain'):
-        message_text = request.data.decode("utf-8")
+        try:
+            message_text = json.dumps(request.json)
+        except Exception as e:
+            logging.error("Incoming request treated as JSON by Flask. Error while converting json to string : %s" % str(e))
+            return jsonify({"error": True, "message": "Incorrect JSON : " + str(e)}), 400
+
     else:
-        return jsonify(
-            {"error": True, "message": "No contentType detected. Please use application/json or text/plain."})
+        return jsonify({"error": True, "message": "Given content type is not supported :" + str(request.content_type) + ". Please use application/json, text/plain or nothing"}), 406
 
     if message_text is None or message_text == "":
         return jsonify({"error": True, "message": "Data field in POST request cannot be empty."})

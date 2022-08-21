@@ -79,7 +79,8 @@ app:
     # Minimum log level, can either be INFO, DEBUG or WARN.
     logLevel: INFO
 
-    # Relative path inside the GIT repository
+    # Absolute path inside the GIT repository where is store the topic configuration.
+    # Do not prepend with a "/"
     configurationPath: "config.json"
 
 service:

@@ -20,8 +20,8 @@ Gitfaas acts like a [GitOps](https://www.weave.works/technologies/gitops/) techn
 
 Gitfaas is a FAAS (Function As A Service) like [Openfaas](https://www.openfaas.com/) or [Fission](https://fission.io/) meaning that it provides developers with serverless containers.
 
-project status : PRE-ALPHA  
-Do not use in production before BETA. Everything works but is you try to break it, it will break.  
+Project status : BETA STABLE  
+If you have any errors please create an issue. Thx  
 
 ## Functionalities
 

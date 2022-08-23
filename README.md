@@ -40,11 +40,12 @@ If you have any errors please create an issue. Thx
 Cloning this repository :  
 ```
 git clone https://github.com/rememberSoftwares/gitfaas.git
-cd gitfaas\
+cd gitfaas\helm_chart
 ```
 Install using Helm : 
 You need at least a Git server URL, a username and a way to clone the repo. Here we use a personnal token token but you can edit the `helm_chart/values.yaml` to activate SSH keys instead.  
 ```
+helm dep update
 helm install gitfaas . -n gitfaas --create-namespace --set app.git.url="<YOUR_REPO_URL>" --set app.git.userName="<A_GIT_USERNAME>" --set app.git.http.personalToken="A_GIT_PERSONNAL_TOKEN"
 ```
 More information on the git personal token : [here](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token)  

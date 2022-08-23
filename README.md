@@ -50,7 +50,11 @@ helm install gitfaas . -n gitfaas --create-namespace --set app.git.url="<YOUR_RE
 ```
 More information on the git personal token : [here](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token)  
 
-Need help installing ? Follow this in depth tutorial.
+⚠️ If your default branch name isn't "main", add --set app.git.pullBranch="<YOUR_BRANCH_NAME>"
+
+➡️ Check if Gitfaas container is happy: `kubectl logs -n gitfaas gitfaas-XXXXXXX -c git -f`.
+
+Need help installing ? Follow this in depth tutorial. @todo link to install tuto
 
 ## Helm chart most common configuration
 

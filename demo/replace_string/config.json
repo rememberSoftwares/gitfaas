@@ -1,0 +1,10 @@
+{
+    "topics":[
+        {
+            "name": "replace",
+            "configs": [
+                "replace_job.yaml"
+            ]
+        }
+    ]
+}

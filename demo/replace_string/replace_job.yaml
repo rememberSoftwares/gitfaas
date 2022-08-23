@@ -1,0 +1,18 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: replace-job-{{RANDOM}}  # <== Replaced by a random string to provide always uniq Jobs (lambdas)
+spec:
+  ttlSecondsAfterFinished: 3600
+  backoffLimit: 1
+  template:
+    spec:
+      containers:
+      - name: reverse
+        image: wingardiumleviosa/demo-gitfaas-replace:0.0.1
+        env:
+        - name: PAYLOAD
+          value: "{{PAYLOAD}}"        # <== Replaced by the message sent to this lambda
+        - name: FUNCTION_UID
+          value: "{{FUNCTION_UID}}"   # <== Replaced by a uniq UID used to post the lambdas response back to Gitfaas
+      restartPolicy: Never

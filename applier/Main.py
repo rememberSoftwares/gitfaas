@@ -101,8 +101,8 @@ def update_pid():
 @login_required
 def activate_master_error():
     try:
-        logging.info("entering error mode")
-        logging.info(str(type(request.json)))
+        logging.error("Entering master error mode")
+        logging.error(str(type(request.json)))
         if "reason" not in request.json:
             logging.error("Missing reason text field")
             return jsonify({"error": True, "message": "Missing reason text field"})
@@ -214,33 +214,22 @@ def publish(topic):
     logging.info("Topic : %s" % topic)
     logging.debug("Folder in use : %s" % r.get("folder_in_use"))
 
-    logging.info("contentype = %s" % str(request.content_type))
+    logging.debug("Getting content-type = %s" % str(request.content_type))
 
     if request.content_type is None or request.content_type.startswith('text/plain'):
-        logging.info("ca passe dans None ou text plain")
-        logging.info(str(type(request.data)))
-        logging.info(str(request.data))
-        logging.info(str(request.data.decode('utf-8')))
         message_text = str(request.data.decode('utf-8'))
 
     elif request.content_type.startswith('application/json'):
-        logging.info("ca passe dans app json")
         try:
-            logging.info("attention aux yeux")
             message_text = json.dumps(request.json)
-            logging.info("bam ?")
         except Exception as e:
             logging.error("Incoming request treated as JSON by Flask. Error while converting json to string : %s" % str(e))
             return jsonify({"error": True, "message": "Incorrect JSON : " + str(e)}), 400
 
     else:
-        logging.info("ca passe dans le else")
-        logging.info("data = %s" % str(request.data))
-        logging.info("form = %s" % str(request.form))
         return jsonify({"error": True, "message": "Given content type is not supported :" + str(request.content_type) + ". Please use application/json, text/plain or nothing"}), 406
 
     if ready_to_use():
-        logging.info("ca passe !")
         current_config = json.loads(r.get("current_config"))
         request_uid = "r-" + str(uuid.uuid4())
         r.set(request_uid, "")
@@ -279,11 +268,11 @@ def publish(topic):
         return jsonify({"error": True, "message": "Folder name or config.json is missing"}), 403
 
 """
-Array of functions uid are stored like : "uid1|uid2|uid2"
-Each uid is the concatenation of the request uid + the function uid. This allows to retrieve the request uid from
-the function uid. The key and values for example : <r-xxxx>:f-yyyy-r-xxxx|f-zzzz-r-xxxx
-A simple uid is made of 36 char + 2 char for identification (r- for request uids and f- for function uids).
-In the end the request uid is made of 38 chars and each function uid is made of 2 * 38 chars + a dash separating them both
+Array of functions_UIDs are stored like : "uid1|uid2|uid2"
+Each UID is the concatenation of the request_UID + the function_UID. This allows to retrieve the request_UID from
+the function_UID. The key and values are for example : <r-xxxx> : f-yyyy-r-xxxx|f-zzzz-r-xxxx
+A simple uid is made of 36 char + 2 char for identification (r- for request_UIDs and f- for function_UIDs).
+In the end the request_UID is made of 38 chars and each function_UID is made of 2 * 38 chars + a dash separating them both
 => 77 chars
 """
 def add_function_uid_to_request(request_uid):

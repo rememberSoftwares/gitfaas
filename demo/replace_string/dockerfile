@@ -5,8 +5,8 @@ COPY requirements.txt requirements.txt
 RUN pip install -r requirements.txt
 RUN apt-get update && \
     apt-get upgrade -y && \
-    apt-get install -y git curl nano
-COPY . .
+    apt-get install -y curl nano
 RUN groupadd -r demo && useradd -r -g demo demo && mkdir /home/demo && chown demo:demo /home/demo 
 USER demo
 CMD [ "python3", "-u", "main.py" ]
+COPY main.py main.py

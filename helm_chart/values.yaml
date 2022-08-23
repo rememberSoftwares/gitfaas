@@ -30,7 +30,7 @@ app:
     # Git branch to pull where the manifests are stored.
     pullBranch: main
 
-    # Refresh git repo any x minutes.
+    # Refresh git repo each x minutes.
     pollingInterval: "5"
 
     # Minimum log level, can either be INFO, DEBUG or WARN.

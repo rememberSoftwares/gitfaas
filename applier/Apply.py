@@ -18,7 +18,7 @@ class Exec(object):
     @staticmethod
     def run(command):
         output = []
-        logging.info("Executing command % s", command)
+        logging.debug("Executing command % s", command)
         p = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         logging.debug("Start : command output")
         for line in p.stdout.readlines():
@@ -34,6 +34,7 @@ class Kubernetes(object):
     def apply_from_stdin(yaml_to_apply):
         b64_yaml = base64.b64encode(bytes(yaml_to_apply, 'utf-8'))
         logging.debug("Yaml to apply : \n%s" % str(yaml_to_apply))
+        logging.info("Applying Kubernetes manifest now")
         output = Exec.run("echo " + b64_yaml.decode("utf-8") + " | base64 -d | kubectl apply -f -")
         for line in output:
             match = re.search(SUCCESSFUL_APPLY_REGEX, line)

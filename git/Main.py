@@ -2,58 +2,84 @@ import os
 import signal
 import time
 import sys
-import sh
+import logging
 
 from InputValuesCheck import *
-from Repo import Repo
+from Repo import RepoFactory
 from Notify import *
 from ConfigReader import *
+from Errors import *
+from Config import AVAILABLE_LOG_LEVELS
 
-POLLING_TIME = os.environ.get('POLLING_TIME', 1)
-GIT_URL = os.environ.get("GIT_URL", None)
-WORK_PATH = os.environ.get("WORK_PATH", None)
+POLLING_INTERVAL = os.environ.get('POLLING_INTERVAL', 1)
+GIT_REPO_URL = os.environ.get("GIT_URL", None)
 GIT_USER_NAME = os.environ.get("GIT_USER_NAME", None)
 GIT_PERSONAL_TOKEN = os.environ.get("GIT_PERSONAL_TOKEN", None)
+GIT_BRANCH = os.environ.get("GIT_PULL_BRANCH", "main")
+GIT_USE_SSH_KEY = os.environ.get("GIT_USE_SSH_KEY", None)
+LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO")
+GIT_STRICT_HOST_KEY_CHECKING = os.environ.get("GIT_STRICT_HOST_KEY_CHECKING", "yes")
+APPLY_CONFIG_PATH = os.environ.get("APPLY_CONFIG_PATH", "config.json")
+
+if LOG_LEVEL not in AVAILABLE_LOG_LEVELS:
+    LOG_LEVEL = "INFO"
+    print("WARNING:root:Invalid value given to LOG_LEVEL. Defaulting to level : INFO")
+
+
+logging.basicConfig()
+logging.getLogger().setLevel(getattr(logging, LOG_LEVEL))
+
+logging.error("-----> ERROR")
+logging.warning("------> WARNING")
+logging.info("------> INFO")
+logging.debug("-----> DEBUG")
+
+logging.info("Running Git (container) version : %s" % os.environ.get("VERSION", "?"))
 
 
 def receive_signal(signal_number, frame):
-    print('Received:', signal_number)
+    logging.info('Received signal to refresh from Apply container: %s' % str(signal_number))
     if signal_number == 10:
-        repo_refresh(last_hash)
+        repo_refresh()
 
 
-def repo_refresh(previous_hash):
-    repo.updateRepo()
-    current_hash = repo.getCurrentHash()
-    if current_hash != previous_hash:
-        Notify.manifests_config(config_reader.load_config_from_fs())
-        previous_hash = current_hash
-    return previous_hash
+def repo_refresh():
+    try:
+        repo.update_repo()
+    except GitUpdateError as err:
+        logging.fatal(str(err))
+        return
+
+    if repo.has_repo_changed():
+        try:
+            notify.manifests_config(config_reader.load_config_from_fs())
+        except GitUpdateError as err:
+            notify.master_error(str(err))
 
 
 try:
     check = InputValuesCheck()
-    check.checkPollingTime(POLLING_TIME)
-    check.checkGitUrl(GIT_URL)
-    check.checkWorkPath(WORK_PATH)
-    check.checkGitAuth(GIT_USER_NAME, GIT_PERSONAL_TOKEN)
-    POLLING_TIME = int(POLLING_TIME)
-except ValueError:
-    print("EXITING !")
+    check.check_polling_time(POLLING_INTERVAL)
+    check.check_git_url(GIT_REPO_URL, GIT_USE_SSH_KEY)
+    check.check_git_auth(GIT_USER_NAME, GIT_PERSONAL_TOKEN, GIT_USE_SSH_KEY)
+    check.check_git_strict_host_key_checking(GIT_STRICT_HOST_KEY_CHECKING)
+    POLLING_INTERVAL = int(POLLING_INTERVAL)
+except ValueError as err:
+    logging.info(err)
+    logging.fatal("Exiting...")
     sys.exit()
 
-os.chdir(WORK_PATH)
-config_reader = ConfigReader()
-repo = Repo(GIT_URL, GIT_USER_NAME, GIT_PERSONAL_TOKEN)
+config_reader = ConfigReader(APPLY_CONFIG_PATH)
+notify = Notify()
+repo = RepoFactory.create_repo(GIT_REPO_URL, GIT_USER_NAME, GIT_PERSONAL_TOKEN, GIT_BRANCH, GIT_STRICT_HOST_KEY_CHECKING, notify)
 config = None
-last_hash = None
 
-Notify.wait_for_ready_status()
-Notify.clone_folder_name(repo.extract_folder_name())
-Notify.pid()
+notify.wait_for_ready_status()
+notify.set_tofu_code()
+notify.current_proc_pid()
 signal.signal(signal.SIGUSR1, receive_signal)
 
 while True:
-    last_hash = repo_refresh(last_hash)
-    print("Waiting !")
-    time.sleep(POLLING_TIME * 60)
+    repo_refresh()
+    logging.info("Waiting specified time : %s seconds" % (POLLING_INTERVAL * 60))
+    time.sleep(POLLING_INTERVAL * 60)

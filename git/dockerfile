@@ -1,9 +1,12 @@
 FROM python:3.8-slim-buster
+ENV PYTHONUNBUFFERED=1
 WORKDIR /app
 COPY requirements.txt requirements.txt
 RUN pip install -r requirements.txt
 RUN apt-get update && \
     apt-get upgrade -y && \
-    apt-get install -y git curl
+    apt-get install -y git curl nano
 COPY . .
+RUN groupadd -r gitfaas && useradd -r -g gitfaas gitfaas && mkdir /home/gitfaas && chown gitfaas:gitfaas /home/gitfaas && mkdir /home/gitfaas/.ssh && touch /home/gitfaas/.gitconfig && chown gitfaas:gitfaas /home/gitfaas/.gitconfig
+USER gitfaas
 CMD [ "python3", "-u", "Main.py" ]

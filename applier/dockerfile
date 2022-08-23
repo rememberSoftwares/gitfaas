@@ -1,12 +1,15 @@
 FROM python:3.8-slim-buster
 WORKDIR /app
+ENV PYTHONUNBUFFERED=1
 COPY requirements.txt requirements.txt
 RUN mkdir /root/.kube
 RUN pip install -r requirements.txt
 RUN apt-get update && \
     apt-get upgrade -y && \
     apt-get install -y curl
-RUN curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl
+RUN curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
 RUN chmod +x kubectl && mv ./kubectl /usr/bin/kubectl
+RUN groupadd -r gitfaas && useradd -r -g gitfaas gitfaas && mkdir /home/gitfaas && chown gitfaas:gitfaas /home/gitfaas
+USER gitfaas
 COPY . .
 ENTRYPOINT [ "./start.sh" ]

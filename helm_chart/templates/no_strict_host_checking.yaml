@@ -1,0 +1,9 @@
+apiVersion: v1
+data:
+  .gitconfig: |-
+    [core]
+            sshCommand = ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no
+kind: ConfigMap
+metadata:
+  creationTimestamp: null
+  name: no-strict-host-checking

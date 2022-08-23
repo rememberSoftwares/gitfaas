@@ -1,19 +1,23 @@
 # Default values for gitfaas.
 # This is a YAML-formatted file.
 
+# TL;DR
+# You MUST define the Git URL and username. Also set a personnalToken or use the SSH mode and set the corresponding values.
+# Better to update the redis password at the end of this file.
+
 image:
   repository: docker.io
   pullPolicy: Always
   apply:
-    name: gitfaas-apply-dev
-    version: 0.0.9
+    name: gitfaas-apply
+    version: 1.0.0
   git:
-    name: gitfaas-git-dev
-    version: 0.0.6
+    name: gitfaas-git
+    version: 1.0.0
 
 rbac:
   # Either restricts manifests to be deployed into the gitfaas namespace or in any namespace.
-  # For security reasons it is recommanded to use 'namespace'. You could also extend the RBAC templates manually to allow other namespaces.
+  # For security reasons it is recommended to use 'namespace'. You could also extend the RBAC templates manually to allow other namespaces.
   # Value can either be ["clusterWide" | "namespaced"]
   scope: "namespaced"
 
@@ -73,7 +77,7 @@ app:
       strictHostKeyChecking: "yes"
 
   apply:
-    # Kubernetes ressources that will be blocked if appearing in any files to be deployed by gitfaas. Separator is space.
+    # Kubernetes ressources that will be blocked if appearing in any files to be deployed by Gitfaas. Separator is space.
     bannedKubeRessources: Role RoleBinding ClusterRole ClusterRoleBinding ServiceAccount Ingress Service
 
     # Minimum log level, can either be INFO, DEBUG or WARN.
@@ -130,7 +134,7 @@ affinity: {}
 
 redis:
   auth:
-    # Maybe update this. Even though redis in only used to store runtime config and NOT the repo files
+    # You should update this to whatever you want ! Just don't leave this default value. It's not a safe world out there.
     password: thisisthepassword
   master:
     persistence:

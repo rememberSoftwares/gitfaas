@@ -184,7 +184,7 @@ def main():
 
 | Path | query params | body params | Description |
 | --- | --- | --- | --- |
-| POST `/publish/<topic>` | Any query param which key is templatized in lambda will be replaced | A message to give the lambda | Publish a message on a topic  |
+| POST `/publish/<topic>` | Any query param which key is templatized in lambda will be replaced | A message to give the lambda | Publishes a message on a topic, resulting in the creation of a lambda(s)  |
 | POST `/response` | function_uid=`<UID available to the lambda>` | A message to return to the caller | Allows a lambda to return data to the caller when finished |
 | GET  `/response` | request_uid=`<UID available to the caller>` | N/A | Allows the caller to retrieve data sent back from created lambdas |
 | GET `/refresh` | N/A | N/A | Forces Gitfaas to start pulling the Git repo |

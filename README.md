@@ -21,7 +21,7 @@ Gitfaas acts like a [GitOps](https://www.weave.works/technologies/gitops/) techn
 Gitfaas is a FAAS (Function As A Service) like [Openfaas](https://www.openfaas.com/) or [Fission](https://fission.io/) meaning that it provides developers with serverless containers.
 
 Project status : BETA STABLE  
-If you have any errors please create an issue. Thx  
+If you encounter any errors please create an issue. Thx  
 
 ## Functionalities
 
@@ -35,6 +35,16 @@ If you have any errors please create an issue. Thx
 * **Integration with any languages** : You don't have to update your codebase (only needs access to ENV and a network lib).
 * **Apply whatever you want** : Gitfaas was meant to apply lambdas but you can give it any YAML manifest to apply.
 
+
+## How does it work ?
+
+![archi fonctionnement gitfaas](https://user-images.githubusercontent.com/6358314/187427077-b4d32538-27c7-403c-83a0-b665da7a8948.png)
+
+1) Create a Kubernetes Job that represents your lambda. Commit the manifest to a Git server.
+2) Create the Gitops configfile that defines the topics your lambdas are listening to. Commit the JSON config to a Git server.
+3) Post a message to Gitfaas on a specific topic. Every lambda listening to this topic will be triggered.
+4) Gitfaas applies the Job manifest (the lambda) to the Kubernetes cluster. It will give the lambda any messages sent on the topic at step 3.
+
 ## Installation
 
 Cloning this repository :  
@@ -43,7 +53,7 @@ git clone https://github.com/rememberSoftwares/gitfaas.git
 cd gitfaas\helm_chart
 ```
 Install using Helm : 
-You need at least a Git server URL, a username and a way to clone the repo. Here we use a personnal token token but you can edit the `helm_chart/values.yaml` to activate SSH keys instead.  
+You need at the very least a Git server URL, a username and an authentification method. Here we use a personnal token token but you can edit the `helm_chart/values.yaml` to activate SSH keys instead.  
 ```
 helm dep update
 helm install gitfaas . -n gitfaas --create-namespace --set app.git.url="<YOUR_REPO_URL>" --set app.git.userName="<A_GIT_USERNAME>" --set app.git.http.personalToken="A_GIT_PERSONNAL_TOKEN"

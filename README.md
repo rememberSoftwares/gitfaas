@@ -48,13 +48,13 @@ If you encounter any errors please create an issue. Thx
 ## Installation
 
 Cloning this repository :  
-```
+```shell
 git clone https://github.com/rememberSoftwares/gitfaas.git
 cd gitfaas\helm_chart
 ```
 Install using Helm : 
 You need at the very least a Git server URL, a username and an authentification method. Here we use a personnal token token but you can edit the `helm_chart/values.yaml` to activate SSH keys instead.  
-```
+```shell
 helm dep update
 helm install gitfaas . -n gitfaas --create-namespace --set app.git.url="<YOUR_REPO_URL>" --set app.git.userName="<A_GIT_USERNAME>" --set app.git.http.personalToken="A_GIT_PERSONNAL_TOKEN"
 ```
@@ -93,7 +93,7 @@ It's quite easy. You just have to create a config.json at the root of your git r
 
 _"Inside your git repository"_  
 Create a file `config.json` and follow this simple JSON structure  
-```
+```json
 {
     "topics":[
         {
@@ -108,7 +108,7 @@ Create a file `config.json` and follow this simple JSON structure
 Take a look at the above configuration. It's all about defining a topic name and a list of files to apply when this topic is triggered.  
 
 Let's make a real example :  
-```
+```json
 {
     "topics":[
         {
@@ -132,8 +132,8 @@ The file collect.yaml will be applied on the cluster. This file can be anything 
 
 ## Basic function deployment
 
-Even though Gitfaas can apply anything, if you want all the functionalities advertised you need to use the following Kubernetes manifest:
-```
+Even though Gitfaas can apply anything, if you want all the lambdas functionalities you must use the following Kubernetes manifest:
+```yaml
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -157,7 +157,7 @@ The above configuration in the minimal deployment.
 **DO NOT EDIT ALL THE `{{...}}` as it is part of Gitfaas.**  
 
 The interesting part is :  
-```
+```yaml
         env:
         - name: MESSAGE
           value: "{{MESSAGE}}"
@@ -168,7 +168,7 @@ The interesting part is :
 This is how your function gets the message that has been posted on the topic.  
 In your code simply extract the message from the ENV. Please note that it will be encoded using base64. This is useful to ensure the message is not corrupted (like double quotes to simple quotes when using JSON payloads).  
 In python this is how your function would extract the message :
-```
+```python
 def main():
     b64_message = os.environ.get('MESSAGE', None)
     if b64_message is None:
@@ -180,12 +180,24 @@ def main():
     # have fun
 ```
 
+# HTTP API
+
+| Path | query params | body params | Description |
+| --- | --- | --- | --- |
+| POST `/publish/<topic>` | Any query param which key is templatized in lambda will be replaced | A message to give the lambda | Publish a message on a topic  |
+| POST `/response` | function_uid=`<UID available to the lambda>` | A message to return to the caller | Allows a lambda to return data to the caller when finished |
+| GET  `/response` | request_uid=`<UID available to the caller>` | N/A | Allows the caller to retrieve data sent back from created lambdas |
+| GET `/refresh` | N/A | N/A | Forces Gitfaas to start pulling the Git repo |
+
+
+
+
 # How to scale to 0
 
 Scaling to 0 allows you to manage the cost of your infrastructure.  
 This functionality is achieved using a Kubernetes key called `ttlSecondsAfterFinished`.  
 Take the default job deployment and add this new key to it:  
-```
+```yaml
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -213,7 +225,7 @@ When the job is removed, so is the pod created. 60 seconds is a good value but i
 ## Retrying
 
 This can be done using `backoffLimit: <MAX_NUMBER_OF_RETRIES>`
-```
+```yaml
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -241,7 +253,7 @@ spec:
 
 Serverless functions should be able to use volumes. The function stays stateless as when the function exits the volume is also deleted.
 
-```
+```yaml
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -285,7 +297,7 @@ When the pod is deleted/finished the PVC is also deleted automatically.
 
 ## Complete example
 
-```
+```yaml
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -350,14 +362,14 @@ To start a job use the following routes:
 * Header : Content type can either be application/json or plain/text
 
 With curl :
-```
+```shell
  curl "http://gitfaas:5000/publish/mytopic" -X POST -d '{ "hello": "world" }' -H 'Content-Type: application/json'
 ```
 This will apply all Kubernetes manifests listening on the topic _"mytopic"_.
 
 Note that you can use query params to template anything in the manifest.  
 For instance, edit the YAML of the manifest :  
-```
+```yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -370,7 +382,7 @@ spec:
 Now publish a message using this query params : `http://gitfaas:5000/publish/mytopic&replicas=2`  
 
 This will be rendered and then apply like this :  
-```
+```yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:

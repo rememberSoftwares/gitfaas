@@ -84,7 +84,7 @@ Need help installing ? Follow this in depth tutorial. @todo link to install tuto
 | `app.apply.bannedKubeRessources` | This is a list of separated (by space) Kubernetes ressources that really shouldn't be allowed to be applied by gitfaas. Allowing someone to apply thoses might give an attacker the posibility to give him acccess to your cluster and compromise gitfaas. This list should be extended if needed. Remember that Gitfaas is protected by RBAC and can only deploy "pods", "services", "deployments" and "jobs". To apply other kinds of ressource you will need to update this rbac with you own RBAC Role and RoleBinding. Check this documentation to update gitfaas RBAC @todo link.  | `Role RoleBinding ClusterRole ClusterRoleBinding ServiceAccount Ingress` |
 | `app.apply.logLevel` | Application will write logs that can be viewed using kubectl logs. Availble levels are "INFO", "DEBUG" and "WARN" | `INFO` |
 | `app.apply.configurationPath` | Gitfaas uses a single JSON configuration file to define topics and lambdas. This file must be present inside the Github repository. This setting will overwrite the default location wich is at the root of the repo. Full path from root is mandatory but do not start with "/". ie "folder_1/folder_2/my_topic_settings.json" | `config.json` |
-| `redis.auth.password` | Redis password. Redis is used by gitfaas to store lambdas responses and other run time information. It is best to be updated with something random. | `redacted` |
+| `redis.auth.password` | Redis password. Redis is used by gitfaas to store lambdas responses and other run time information. It is best to be update this value with something random. | `redacted` |
 
 ## Basic configuration
 

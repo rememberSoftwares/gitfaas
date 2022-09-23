@@ -45,6 +45,11 @@ If you encounter any errors please create an issue. Thx
 3) Post a message to Gitfaas on a specific topic. Every lambda listening to this topic will be triggered.
 4) Gitfaas applies the Job manifest (the lambda) to the Kubernetes cluster. It will give the lambda any messages sent on the topic at step 3.
 
+---
+
+**Before going further you might want to check the [Wiki](https://github.com/rememberSoftwares/gitfaas/wiki) ! It has an [in depth tutorial](https://github.com/rememberSoftwares/gitfaas/wiki/Tutorial---Part-1) and a great [Quickstart](https://github.com/rememberSoftwares/gitfaas/wiki/Quick-start) that goes through all Gitfaas functionnalities !**
+
+
 ## Installation
 
 Cloning this repository :  
@@ -60,7 +65,7 @@ helm install gitfaas . -n gitfaas --create-namespace --set app.git.url="<YOUR_RE
 ```
 More information on the git personal token : [here](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token)  
 
-⚠️ If your default branch name isn't "main", add --set app.git.pullBranch="<YOUR_BRANCH_NAME>"
+⚠️ If your default branch name isn't "main", add `--set app.git.pullBranch="<YOUR_BRANCH_NAME>"`
 
 ➡️ Check if Gitfaas container is happy: `kubectl logs -n gitfaas gitfaas-XXXXXXX -c git -f`.
 

@@ -5,13 +5,13 @@
 
 # gitfaas
 
-A framework for serverless functions on Kubernetes.  
+A framework for serverless functions on Kubernetes aka lambdas.  
 Gitfaas can apply any Kubernetes manifest using its REST API. It emphases on providing long running Kubernetes jobs and gives you full control over the manifest content.  
 
 
-Write short-lived functions in any language, and map them to HTTP requests (or other event triggers).
+Write short or longed lived lambdas in any language, and map them to HTTP requests (or other event triggers).
 
-Deploy functions instantly with one command. There are no containers to build, and no Docker registries to manage.
+Deploy lambdas instantly with one command. There are no containers to build, and no Docker registries to manage.
 A mix between GitOps and FAAS to create data pipelines on Kubernetes
 
 Gitfaas allows you to apply Kubernetes manifests by making HTTP requests. Even though it can apply anything it focuses on making pipelines of long running jobs that can start other jobs themselves. It's the perfect match to create data pipelines (Collect, uncompress, convert data, etc.).
@@ -27,9 +27,9 @@ If you encounter any errors please create an issue. Thx
 
 * **One pod per request** : Each of your requests to Gitfaas will be served by a new pod. This tends to create longer responses in time but allows dealing with volumes far easily.
 * **Volumes** : Each new pod created can have its own fresh volume by creating PVCs on the fly. When the pod is deleted, so is the PVC.
-* **Scale to 0** : When no function is invoked, no pod is created. One request makes one pod and one optional volume. When finished the pod and the volume are both deleted. This way you don't have to pay for unused resources.
-* **Retry** : When your serverless function need to restart you can trigger the recreation of the pod.
-* **Topics** : Trigger functions using topics (the same way as you would using NATS/RabbitMQ). A function can listen to multiple topics.
+* **Scale to 0** : When no lambda is invoked, no pod is created. One request makes one pod and one optional volume. When finished the pod and the volume are both deleted. This way you don't have to pay for unused resources.
+* **Retry** : When your serverless function (lambda) needs to restart you can trigger the recreation of the pod.
+* **Topics** : Trigger lambdas using topics (the same way as you would using NATS/RabbitMQ). A lambda can listen to multiple topics.
 * **Responses** : Your lambdas can post the result independant of the time they take. No timeouts to configure. All results are stored and can be viewed at any time. 
 * **Industry standards security** : Using RBAC, minimal images, preventing configuration injection.
 * **Integration with any languages** : You don't have to update your codebase (only needs access to ENV and a network lib).
@@ -93,7 +93,7 @@ Need help installing ? Follow this in depth tutorial. @todo link to install tuto
 
 ## Basic configuration
 
-How to configure Gitfaas to start a function ?  
+How to configure Gitfaas to start a lambda ?  
 It's quite easy. You just have to create a config.json at the root of your git repository.  
 
 _"Inside your git repository"_  
@@ -135,7 +135,7 @@ In the above configuration we have instructed Gitfaas to apply the file `collect
 The file collect.yaml will be applied on the cluster. This file can be anything you want. But if you need to make pipelines with scale to 0 and volumes you'll have to respect the correct kind of Kubernetes manifest. Continue this lecture to know more.  
 
 
-## Basic function deployment
+## Basic lambda deployment
 
 Even though Gitfaas can apply anything, if you want all the lambdas functionalities you must use the following Kubernetes manifest:
 ```yaml
@@ -152,10 +152,10 @@ spec:
         image: <REPLACE_YOUR_IMAGE>
         command: ["python3", "handler.py"]
         env:
-        - name: MESSAGE
-          value: "{{MESSAGE}}"
-        - name: REQUEST_UUID
-          value: "{{REQUEST_UUID}}"
+        - name: PAYLOAD
+          value: "{{PAYLOAD}}"
+        - name: FUNCTION_UID
+          value: "{{FUNCTION_UID}}"
       restartPolicy: Never
 ````
 The above configuration in the minimal deployment.  
@@ -164,35 +164,36 @@ The above configuration in the minimal deployment.
 The interesting part is :  
 ```yaml
         env:
-        - name: MESSAGE
-          value: "{{MESSAGE}}"
-        - name: REQUEST_UUID
-          value: "{{REQUEST_UUID}}"
+        - name: PAYLOAD
+          value: "{{PAYLOAD}}"
+        - name: FUNCTION_UID
+          value: "{{FUNCTION_UID}}"
 ```
 
-This is how your function gets the message that has been posted on the topic.  
-In your code simply extract the message from the ENV. Please note that it will be encoded using base64. This is useful to ensure the message is not corrupted (like double quotes to simple quotes when using JSON payloads).  
-In python this is how your function would extract the message :
+This is how your lambda gets the payload (message) that has been posted on the topic.  
+
+In your code simply extract the payload from the ENV. Please note that it will be encoded using base64. This is useful to ensure the message is not corrupted (like double quotes to simple quotes when using JSON payloads).  
+In python this is how your lambda would extract the payload :
 ```python
 def main():
-    b64_message = os.environ.get('MESSAGE', None)
-    if b64_message is None:
-        print("No message in env")
+    b64_payload = os.environ.get('PAYLOAD', None) # Extracting the payload from env
+    if b64_payload is None:                       # Making sure there realy is a payload
+        print("No payload in env")
         return
-    message = base64.b64decode(b64_message)
-    message = message.decode("utf-8")
+    message = base64.b64decode(b64_payload)       # Extracting the message from the base64 payload
+    message = message.decode("utf-8")             # Lame python decoding stuff
     print("message = ", message)
     # have fun
 ```
 
 # HTTP API
 
-| Path | query params | body params | Description |
-| --- | --- | --- | --- |
-| POST `/publish/<topic>` | Any query param which key is templatized in lambda will be replaced | A message to give the lambda | Publishes a message on a topic, resulting in the creation of a lambda(s)  |
-| POST `/response` | function_uid=`<UID available to the lambda>` | A message to return to the caller | Allows a lambda to return data to the caller when finished |
-| GET  `/response` | request_uid=`<UID available to the caller>` | N/A | Allows the caller to retrieve data sent back from created lambdas |
-| GET `/refresh` | N/A | N/A | Forces Gitfaas to start pulling the Git repo |
+| Path | URL params | query params | body params | Description |
+| --- | --- | --- | --- | --- |
+| POST `/publish/<topic>` | | Any query param which key is templatized in lambda will be replaced | A payload to give the lambda | Publishes a message on a topic, resulting in the creation of a lambda(s)  |
+| POST `/response/<function_uid>` | function_uid=`<UID available to the lambda>` | N/A | A message to return to the caller | Allows a lambda to return data to the caller when finished |
+| GET  `/response/<request_uid>` | request_uid=`<UID available to the caller>` | N/A | N/A | Allows the caller to retrieve data sent back from created lambdas |
+| GET `/refresh` | N/A | N/A | N/A | Forces Gitfaas to start pulling the Git repo |
 
 
 
@@ -217,10 +218,10 @@ spec:
         image: <REPLACE_YOUR_IMAGE>
         command: ["python3", "handler.py"]
         env:
-        - name: MESSAGE
-          value: "{{MESSAGE}}"
-        - name: REQUEST_UUID
-          value: "{{REQUEST_UUID}}"
+        - name: PAYLOAD
+          value: "{{PAYLOAD}}"
+        - name: FUNCTION_UID
+          value: "{{FUNCTION_UID}}"
       restartPolicy: Never
 ```
 
@@ -245,10 +246,10 @@ spec:
         image: <REPLACE_YOUR_IMAGE>
         command: ["python3", "handler.py"]
         env:
-        - name: MESSAGE
-          value: "{{MESSAGE}}"
-        - name: REQUEST_UUID
-          value: "{{REQUEST_UUID}}"
+        - name: PAYLOAD
+          value: "{{PAYLOAD}}"
+        - name: FUNCTION_UID
+          value: "{{FUNCTION_UID}}"
       restartPolicy: Never
 ```
 
@@ -256,7 +257,7 @@ spec:
 
 ## Using volumes
 
-Serverless functions should be able to use volumes. The function stays stateless as when the function exits the volume is also deleted.
+Lambdas should be able to use volumes. The lambda stays stateless as when it is removed the volume is also deleted.
 
 ```yaml
 apiVersion: batch/v1
@@ -273,10 +274,10 @@ spec:
         image: <REPLACE_IMAGE>
         command: ["python3", "handler.py"]
         env:
-        - name: MESSAGE
-          value: "{{MESSAGE}}"
-        - name: REQUEST_UUID
-          value: "{{REQUEST_UUID}}"
+        - name: PAYLOAD
+          value: "{{PAYLOAD}}"
+        - name: FUNCTION_UID
+          value: "{{FUNCTION_UID}}"
         volumeMounts:
           - name: my-light-volume
             mountPath: /mnt/disk/
@@ -318,10 +319,10 @@ spec:
         image: <REPLACE_IMAGE>
         command: ["python3", "handler.py"]
         env:
-        - name: MESSAGE
-          value: "{{MESSAGE}}"
-        - name: REQUEST_UUID
-          value: "{{REQUEST_UUID}}"
+        - name: PAYLOAD
+          value: "{{PAYLOAD}}"
+        - name: FUNCTION_UID
+          value: "{{FUNCTION_UID}}"
         volumeMounts:
           - name: my-light-volume
             mountPath: /mnt/disk/
@@ -358,7 +359,7 @@ spec:
 * Retry is deactivated (set to 0) so if the job fails it won't reboot.
 
 
-## Launching a function via the REST API
+## Launching a lambda via the REST API
 
 To start a job use the following routes:
 
@@ -372,7 +373,7 @@ With curl :
 ```
 This will apply all Kubernetes manifests listening on the topic _"mytopic"_.
 
-Note that you can use query params to template anything in the manifest.  
+Note that you can use query params to template anything you like in the manifest.  
 For instance, edit the YAML of the manifest :  
 ```yaml
 apiVersion: apps/v1
@@ -386,7 +387,7 @@ spec:
 
 Now publish a message using this query params : `http://gitfaas:5000/publish/mytopic&replicas=2`  
 
-This will be rendered and then apply like this :  
+This will be rendered and then applied like this :  
 ```yaml
 apiVersion: apps/v1
 kind: Deployment

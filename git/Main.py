@@ -29,10 +29,10 @@ if LOG_LEVEL not in AVAILABLE_LOG_LEVELS:
 logging.basicConfig()
 logging.getLogger().setLevel(getattr(logging, LOG_LEVEL))
 
-logging.error("-----> ERROR")
-logging.warning("------> WARNING")
-logging.info("------> INFO")
-logging.debug("-----> DEBUG")
+logging.error("ERROR logs are shown")
+logging.warning("WARNING logs are shown")
+logging.info("INFO logs are shown")
+logging.debug("DEBUG logs are shown")
 
 logging.info("Running Git (container) version : %s" % os.environ.get("VERSION", "?"))
 

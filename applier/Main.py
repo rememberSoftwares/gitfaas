@@ -20,6 +20,7 @@ from SafeMode import *
 from Apply import ApplyError
 from ConfigValidator import *
 from Report import Report
+from GenUid import *
 
 # Logging options for the app. Choosing for instance INFO will only print logging.info(...) and above outputs
 AVAILABLE_LOG_LEVELS = ["DEBUG", "INFO", "WARN"]
@@ -37,13 +38,10 @@ logging.getLogger().setLevel(getattr(logging, LOG_LEVEL))
 
 app = Flask(__name__)
 
-logging.error("-----> ERROR")
-logging.warning("------> WARNING")
-logging.info("------> INFO")
-logging.debug("-----> DEBUG")
-
-
-
+logging.error("ERROR logs are shown")
+logging.warning("WARNING logs are shown")
+logging.info("INFO logs are shown")
+logging.debug("DEBUG logs are shown")
 
 def wait_for_redis():
     ping = False
@@ -231,15 +229,14 @@ def publish(topic):
 
     if ready_to_use():
         current_config = json.loads(r.get("current_config"))
-        request_uid = "r-" + str(uuid.uuid4())
-        r.set(request_uid, "")
+        request_uid = RequestUid.generate_uid(r)
         report.set_request_uid(request_uid)
         for current_topic in current_config["topics"]:
             if current_topic["name"] == topic:
                 for file_path in current_topic["configs"]:
                     absolute_path = r.get("folder_in_use").decode("utf-8") + "/" + file_path
                     request_params = request.args.to_dict()
-                    function_uid = add_function_uid_to_request(request_uid)
+                    function_uid = FunctionUid.generate_uid(r, request_uid)
                     try:
                         yaml_to_apply = templatize_yaml(absolute_path, function_uid, message_text, request_params, topic)
                         sf = SafeMode()
@@ -267,28 +264,21 @@ def publish(topic):
     else:
         return jsonify({"error": True, "message": "Folder name or config.json is missing"}), 403
 
-"""
-Array of functions_UIDs are stored like : "uid1|uid2|uid2"
-Each UID is the concatenation of the request_UID + the function_UID. This allows to retrieve the request_UID from
-the function_UID. The key and values are for example : <r-xxxx> : f-yyyy-r-xxxx|f-zzzz-r-xxxx
-A simple uid is made of 36 char + 2 char for identification (r- for request_UIDs and f- for function_UIDs).
-In the end the request_UID is made of 38 chars and each function_UID is made of 2 * 38 chars + a dash separating them both
-=> 77 chars
-"""
-def add_function_uid_to_request(request_uid):
-    current_list_content = r.get(request_uid).decode("utf-8")
-    function_uid = "f-" + str(uuid.uuid4()) + "-" + request_uid
-    # We init the function_uid in redis to allow POST /anwser to update this key. POST /response cannot store anything in a
-    # key that isn't initialized (for security reasons)
-    r.set(function_uid, "")
-    if current_list_content is None or current_list_content == "":
-        r.set(request_uid, function_uid)
-    else:
-        r.set(request_uid, current_list_content + "|" + function_uid)
-    return function_uid
+
 
 
 def templatize_yaml(absolute_path, function_uid, message, request_params_to_complete, topic):
+    """
+    We use the Chevon lib to templatize the YAML that will be deployed to the cluster. The 4 variables bellow
+    are always availble to be templatized. If the user doesn't set a variable ( {{var}} ) inside the YAML then it is not
+    templatized
+    :param absolute_path: The path to the YAML file to templatize
+    :param function_uid: The function UID that corresponds to the unique run of the lambda
+    :param message: The message or "payload" to give the lambda. It will generally be available inside the ENV section
+    :param request_params_to_complete: The variables to templatize
+    :param topic: The topic on wich the lambda has been called. This is mostly for information purpose
+    :return: The templated version of the YAML file
+    """
     b64_msg = base64.b64encode(bytes(message, 'utf-8'))
     request_params_to_complete["PAYLOAD"] = b64_msg.decode("utf-8")
     request_params_to_complete["FUNCTION_UID"] = function_uid

@@ -6,10 +6,10 @@ image:
   pullPolicy: Always
   apply:
     name: gitfaas-apply-dev
-    version: 0.0.9
+    version: 0.1.0
   git:
     name: gitfaas-git-dev
-    version: 0.0.6
+    version: 0.1.0
 
 rbac:
   # Either restricts manifests to be deployed into the gitfaas namespace or in any namespace.
@@ -129,8 +129,12 @@ tolerations: []
 affinity: {}
 
 redis:
+  # The response of each lambda is stored inside redis. To be sure that the memory doesn't explode all responses will
+  # be deleted from Redis. The countdown starts when a message is sent and lamda(s) are created. This mea
+  purge_trigger_time: 48
   auth:
-    # Maybe update this. Even though redis in only used to store runtime config and NOT the repo files
+    # Maybe update this. Even though redis in only used to store runtime config and NOT the repo files it's better to
+    # have something random
     password: thisisthepassword
   master:
     persistence:

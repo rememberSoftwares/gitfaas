@@ -143,7 +143,7 @@ class RepoHttp(Repo):
             pass
         os.chdir(VOLUME_MOUNT_PATH + "/" + CLONE_FOLDER)
         command = "git clone -b " + self.branch + " --single-branch " + self.scheme + "://" + self.user_name + ":" + self.token + "@" + self.repo_url
-        redacted_command_for_logs = "git clone -b " + self.branch + " --single-branch " + self.scheme + "://" + self.user_name + ":" + "[REDACTED TO LIMIT TOKEN LEAKING IN LOGS]" + "@" + self.repo_url
+        redacted_command_for_logs = "git clone -b " + self.branch + " --single-branch " + self.scheme + "://" + self.user_name + ":" + "[REDACTED TO PREVENT TOKEN LEAKING IN LOGS]" + "@" + self.repo_url
         output = Exec.run(command, show_command=False, info_msg="Redacted command : " + redacted_command_for_logs)
         Repo.check_git_errors(output)
 

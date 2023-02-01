@@ -1,4 +1,7 @@
 import uuid
+from ConfigValidator import ConfigValidator
+
+REDIS_EXPIRATION_TIME = ConfigValidator.get_redis_expiration_time()
 
 
 class RequestUid:
@@ -6,7 +9,7 @@ class RequestUid:
     @staticmethod
     def generate_uid(r):
         request_uid = "r-" + str(uuid.uuid4())
-        r.set(request_uid, "")
+        r.set(request_uid, "", ex=REDIS_EXPIRATION_TIME)
         return request_uid
 
 
@@ -50,10 +53,11 @@ class FunctionUid:
         redis_f_uid_list = r.get(request_uid).decode("utf-8")
 
         if redis_f_uid_list is None or redis_f_uid_list == "":
-            r.set(request_uid, function_uid)
+            r.set(request_uid, function_uid, ex=REDIS_EXPIRATION_TIME)
         else:
-            r.set(request_uid, redis_f_uid_list + "|" + function_uid)
+            r.set(request_uid, redis_f_uid_list + "|" + function_uid, ex=REDIS_EXPIRATION_TIME)
 
+    @staticmethod
     def init_uid(r, function_uid):
         """
         We init the function_uid in redis to allow the route "POST /answer" to update this key. "POST /response" cannot store
@@ -62,4 +66,4 @@ class FunctionUid:
         :param function_uid:
         :return:
         """
-        r.set(function_uid, "")
+        r.set(function_uid, "", ex=REDIS_EXPIRATION_TIME)

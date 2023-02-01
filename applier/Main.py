@@ -24,7 +24,6 @@ from GenUid import *
 
 # Logging options for the app. Choosing for instance INFO will only print logging.info(...) and above outputs
 AVAILABLE_LOG_LEVELS = ["DEBUG", "INFO", "WARN"]
-#VOLUME_MOUNT_PATH = os.environ.get("VOLUME_MOUNT_PATH", None)
 # Contains an auto-generated password sent by the Git container at startup. This should not be modified during runtime.
 g_tofu_code = None
 
@@ -43,6 +42,9 @@ logging.error("ERROR logs are shown")
 logging.warning("WARNING logs are shown")
 logging.info("INFO logs are shown")
 logging.debug("DEBUG logs are shown")
+
+REDIS_EXPIRATION_TIME = ConfigValidator.get_redis_expiration_time()
+
 
 def wait_for_redis():
     ping = False
@@ -180,7 +182,7 @@ def post_response(function_uid):
         return jsonify({"error": True, "message": "Data field in POST request cannot be empty."})
 
     b64_msg = base64.b64encode(bytes(message_text, 'utf-8'))
-    r.set(function_uid, b64_msg)
+    r.set(function_uid, b64_msg, ex=REDIS_EXPIRATION_TIME)
     logging.info("Setting response for function %s" % function_uid)
     return jsonify({"error": False, "message": "Response stored correctly"})
 
@@ -266,8 +268,6 @@ def publish(topic):
         return jsonify({"error": True, "message": "Folder name or config.json is missing"}), 403
 
 
-
-
 def templatize_yaml(absolute_path, function_uid, message, request_params_to_complete, topic):
     """
     We use the Chevon lib to templatize the YAML that will be deployed to the cluster. The 4 variables bellow
@@ -303,6 +303,9 @@ wait_for_redis()
 # INIT REDIS MINIMAL POPULATION
 r.set("master_error", "False")
 r.set("last_master_error_description", "")
+
+# Checking redis data expiration value
+
 
 if __name__ == '__main__':
     serve(app, host='0.0.0.0', port=5000)

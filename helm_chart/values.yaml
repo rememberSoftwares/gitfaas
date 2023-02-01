@@ -83,6 +83,10 @@ app:
     # Do not prepend with a "/"
     configurationPath: "config.json"
 
+    # Number of seconds before the data is purged inside redis. Defaults to 172800 seconds (2 days).
+    # This means that any function has 2 days to post an answer after it started, and you have 2 days to retrieve its answer
+    expirationTime: 172800
+
 service:
   type: ClusterIP
   port: 5000

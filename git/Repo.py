@@ -3,6 +3,7 @@ import re
 import subprocess
 import os
 from enum import Enum, auto
+from datetime import datetime
 
 from Config import CLONE_FOLDER, VOLUME_MOUNT_PATH
 from ApplyFolders import UrlType, ApplyFolders
@@ -53,7 +54,7 @@ class Repo(object):
         Repo.check_git_errors(output)
 
     def update_repo(self):
-        logging.info("Updating repo")
+        logging.info(f"Updating repo : {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}")
         self.previous_hash = self.current_hash
         if self.firstRun:
             self._clone_repo()

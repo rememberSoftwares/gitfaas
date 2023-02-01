@@ -25,10 +25,10 @@ if LOG_LEVEL not in AVAILABLE_LOG_LEVELS:
     LOG_LEVEL = "INFO"
     print("WARNING:root:Invalid value given to LOG_LEVEL. Defaulting to level : INFO")
 
-
-logging.basicConfig()
+logging.basicConfig(format='%(asctime)s %(message)s', datefmt='%m-%d %H:%M')
 logging.getLogger().setLevel(getattr(logging, LOG_LEVEL))
 
+print(f"Log level should be {LOG_LEVEL}")
 logging.error("ERROR logs are shown")
 logging.warning("WARNING logs are shown")
 logging.info("INFO logs are shown")

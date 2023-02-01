@@ -33,11 +33,12 @@ LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO")
 if LOG_LEVEL not in AVAILABLE_LOG_LEVELS:
     LOG_LEVEL = "INFO"
     print("WARNING:root:Invalid value given to LOG_LEVEL. Defaulting to level : INFO")
-logging.basicConfig()
+logging.basicConfig(format='%(asctime)s %(message)s', datefmt='%m-%d %H:%M')
 logging.getLogger().setLevel(getattr(logging, LOG_LEVEL))
 
 app = Flask(__name__)
 
+print(f"Log level should be {LOG_LEVEL}")
 logging.error("ERROR logs are shown")
 logging.warning("WARNING logs are shown")
 logging.info("INFO logs are shown")
@@ -291,7 +292,7 @@ def templatize_yaml(absolute_path, function_uid, message, request_params_to_comp
 
 logging.info("Running Apply version : %s" % os.environ.get("VERSION", "?"))
 
-# INIT
+# INIT REDIS CONNECTION
 REDIS_PASSWORD = os.environ.get("REDIS_PASSWORD", None)
 if REDIS_PASSWORD is None:
     logging.fatal("Redis password is not set. Exiting now...")
@@ -299,6 +300,7 @@ if REDIS_PASSWORD is None:
 r = redis.Redis(host='gitfaas-redis-master', port=6379, db=0, password=REDIS_PASSWORD)
 wait_for_redis()
 
+# INIT REDIS MINIMAL POPULATION
 r.set("master_error", "False")
 r.set("last_master_error_description", "")
 

@@ -138,7 +138,8 @@ redis:
     password: thisisthepassword
   master:
     persistence:
-      enabled: false
+      # This could be way smaller if the payload responses are small
+      size: 500Mi
   replica:
     replicaCount: 0
     persistence:

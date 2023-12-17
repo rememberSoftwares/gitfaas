@@ -160,7 +160,7 @@ spec:
           value: "{{FUNCTION_UID}}"
       restartPolicy: Never
 ````
-The above configuration in the minimal deployment.  
+The above configuration is the minimal deployment.  
 **DO NOT EDIT ALL THE `{{...}}` as it is part of Gitfaas.**  
 
 The interesting part is :  

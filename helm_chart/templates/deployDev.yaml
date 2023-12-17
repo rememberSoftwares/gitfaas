@@ -24,7 +24,7 @@ spec:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
       - name: git
-        image: wingardiumleviosa/{{ .Values.image.git.name }}:{{ .Values.image.git.version }}
+        image: {{ .Values.images.git.repo}}/{{ .Values.images.git.image }}:{{ .Values.images.git.version }}
         securityContext:
           {{- toYaml .Values.securityContext | nindent 10 }}
         env:
@@ -47,8 +47,8 @@ spec:
         - name: LOG_LEVEL
           value: {{ .Values.app.git.logLevel }}
         - name: VERSION
-          value: {{ .Values.image.git.version }}
-        imagePullPolicy: {{ .Values.image.pullPolicy }}
+          value: {{ .Values.images.git.version }}
+        imagePullPolicy: {{ .Values.images.pullPolicy }}
         ports:
         - containerPort: 5000
         livenessProbe:
@@ -75,7 +75,7 @@ spec:
         {{- end }}
 
       - name:  apply
-        image: wingardiumleviosa/{{ .Values.image.apply.name }}:{{ .Values.image.apply.version }}
+        image: {{ .Values.images.apply.repo }}/{{ .Values.images.apply.image }}:{{ .Values.images.apply.version }}
         securityContext:
           {{- toYaml .Values.securityContext | nindent 10 }}
         env:
@@ -86,12 +86,12 @@ spec:
         - name: LOG_LEVEL
           value: {{ .Values.app.apply.logLevel }}
         - name: VERSION
-          value: {{ .Values.image.apply.version }}
+          value: {{ .Values.images.apply.version }}
         - name: EXPIRATION_TIME
           value: "{{ .Values.app.apply.expirationTime }}"
 
 
-        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        imagePullPolicy: {{ .Values.images.pullPolicy }}
         ports:
         - containerPort: 5000
         volumeMounts:

@@ -5,14 +5,16 @@
 # You MUST define the Git URL and username. Also set a personnalToken or use the SSH mode and set the corresponding values.
 # Better to update the redis password at the end of this file.
 
-image:
+images:
   repository: docker.io
   pullPolicy: Always
   apply:
-    name: gitfaas-apply
+    repo: petrificustotalus
+    image: gitfaas-apply
     version: 1.1.0
   git:
-    name: gitfaas-git
+    repo: petrificustotalus
+    image: gitfaas-git
     version: 1.1.0
 
 rbac:
@@ -141,12 +143,7 @@ redis:
   # be deleted from Redis. The countdown starts when a message is sent and lamda(s) are created. This mea
   purge_trigger_time: 48
   auth:
-<<<<<<< HEAD
     # You should update this to whatever you want ! Just don't leave this default value. It's not a safe world out there.
-=======
-    # Maybe update this. Even though redis in only used to store runtime config and NOT the repo files it's better to
-    # have something random
->>>>>>> 749bd50417ec2a055dde7bdfa8acecf262ecf71d
     password: thisisthepassword
   master:
     persistence:

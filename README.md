@@ -63,33 +63,47 @@ You need at the very least a Git server URL, a username and an authentification 
 helm dep update
 helm install gitfaas . -n gitfaas --create-namespace --set app.git.url="<YOUR_REPO_URL>" --set app.git.userName="<A_GIT_USERNAME>" --set app.git.http.personalToken="A_GIT_PERSONNAL_TOKEN"
 ```
-More information on the git personal token : [here](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token)  
+More information on the git personal token : [here](https://github.com/rememberSoftwares/gitfaas/wiki/Setting-up-Personal-Token-authentification)  
+More information on the ssh key method : [here](https://github.com/rememberSoftwares/gitfaas/wiki/Setting-up-SSH-authentication)  
 
+<<<<<<< HEAD
 ⚠️ If your default branch name isn't "main", add `--set app.git.pullBranch="<YOUR_BRANCH_NAME>"`
 
 ➡️ Check if Gitfaas container is happy: `kubectl logs -n gitfaas gitfaas-XXXXXXX -c git -f`.
 
 Need help installing ? Follow this in depth tutorial. @todo link to install tuto
+=======
+Need help installing ? [Follow this in depth tutorial](https://github.com/rememberSoftwares/gitfaas/wiki/Tutorial---Part-1).
+>>>>>>> 749bd50417ec2a055dde7bdfa8acecf262ecf71d
 
 ## Helm chart most common configuration
 
 | Parameter | Description | Default |
 | --- | --- | --- |
-| `rbac.scope` | Scope of Kubernetes RBAC. Can either be "clusterWide" or "namespaced". In "namespace mode", gitfaas can only apply ressources inside its own namespace. This is recommended for security reasons. When choosing "clusterWide" mode, gitfaas can apply manifest within any namespaced not only his own. | `namespaced` |
+| `rbac.scope` | Scope of Kubernetes RBAC. Can either be "clusterWide" or "namespaced". In "namespace mode", Gitfaas can only apply ressources inside its own namespace. This is recommended for security reasons. When choosing "clusterWide" mode, gitfaas can apply manifest within any namespaced not only his own. | `namespaced` |
 | `app.git.url` | URL of your Git repo. This might be Github, Gitlab or any GIT compatible server. Gitfaas uses GitOps principles so all of your lambdas and manifests are stored in git | `<MUST_BE_SET>` |
 | `app.git.username` | The Git username to be used when cloning/pulling- the Repo | `<MUST_BE_SET>` |
 | `app.git.pullBranch` | The Git branch that will be pulled. Github when from "master" to "main" so we will also reflect the change here. | `main` |
 | `app.git.pollingInterval` | How often (in minutes) the repo will be pulled. This can be decreased for dev env and increased for production. No need to spam. | `10` |
-| `app.git.logLevel` | Application will write logs that can be viewed using kubectl logs. Availble levels are "INFO", "DEBUG" and "WARN" | `INFO` |
-| `app.git.http` | You can either use HTTP or SSH to give gitfaas clone capability. If you wish to go with a personnal token you can get one from your Git provider. Check out this documentation @todo link to get information on how to get the token. | (none) |
-| `app.git.sshKey.usePrivateKey` | You can either use HTTP or SSH to give gitfaas clone capability. If you wish to use SSH then you must provide Gitfaas with a valid SSH private key. Check out this documentation @todo link if you need help setting things up. Availble values are "yes" or "no". Setting this to "yes" will override the use of the personnal token even if it is set. Also you must configure the parameters that follows. | `no` |
+| `app.git.logLevel` | Application will write logs that can be viewed using kubectl logs. Available levels are "INFO", "DEBUG" and "WARN" | `INFO` |
+| `app.git.http` | You can either use HTTP or SSH to give Gitfaas clone capability. If you wish to go with a personal token you can get one from your Git provider. Check out this [documentation](https://github.com/rememberSoftwares/gitfaas/wiki/Setting-up-Personal-Token-authentification) to get information on how to get the token. | (none) |
+| `app.git.sshKey.usePrivateKey` | You can either use HTTP or SSH to give Gitfaas clone capability. If you wish to use SSH then you must provide Gitfaas with a valid SSH private key. Check out this [documentation](https://github.com/rememberSoftwares/gitfaas/wiki/Setting-up-SSH-authentication) if you need help setting things up. Available values are "yes" or "no". Setting this to "yes" will override the use of the personal token even if it is set. Also you must configure the parameters that follows. | `no` |
 | `app.git.sshKey.privKeySecretName` | Name of the Kubernetes secret containing the private ssh key allowing to clone the Git repository. The file name inside the secret MUST BE "id_rsa". Command to generate secret is available as a comment inside the values.yaml. It should be deployed in the same namespace as Gitfaas.  | `gitfaas-ssh-key` |
+<<<<<<< HEAD
 | `app.git.sshKey.knowHostMultiLine` | To prevent MIM attacks this should be set to valid know host. This ensure that gitfaas is contacting your Git server and not a fake one. To generate thoses report to this documentation help @todo link. You can also deactivate the key check with the next parameters but it is NOT recommanded. You can also use HTTP auth with personnal token wich doesn't need this at all. | (none) |
 | `app.git.sshKey.strictHostKeyChecking` | Available values are "yes" or "no". If set to "no" then key checking when using ssh key authentification will be deactivated. This is not recommanded as someone might try MIM attacks. Prefer using personnal token authentication instead. | `yes` |
 | `app.apply.bannedKubeRessources` | This is a list of separated (by space) Kubernetes ressources that really shouldn't be allowed to be applied by gitfaas. Allowing someone to apply thoses might give an attacker the posibility to give him acccess to your cluster and compromise gitfaas. This list should be extended if needed. Remember that Gitfaas is protected by RBAC and can only deploy "pods", "services", "deployments" and "jobs". To apply other kinds of ressource you will need to update this rbac with you own RBAC Role and RoleBinding. Check this documentation to update gitfaas RBAC @todo link.  | `Role RoleBinding ClusterRole ClusterRoleBinding ServiceAccount Ingress` |
 | `app.apply.logLevel` | Application will write logs that can be viewed using kubectl logs. Availble levels are "INFO", "DEBUG" and "WARN" | `INFO` |
 | `app.apply.configurationPath` | Gitfaas uses a single JSON configuration file to define topics and lambdas. This file must be present inside the Github repository. This setting will overwrite the default location wich is at the root of the repo. Full path from root is mandatory but do not start with "/". ie "folder_1/folder_2/my_topic_settings.json" | `config.json` |
 | `redis.auth.password` | Redis password. Redis is used by gitfaas to store lambdas responses and other run time information. It is best to be update this value with something random. | `redacted` |
+=======
+| `app.git.sshKey.knowHostMultiLine` | To prevent MIM attacks this should be set to valid know host. This ensures that Gitfaas is contacting your Git server and not a fake one. To generate the signatures check out this [documentation](https://github.com/rememberSoftwares/gitfaas/wiki/Setting-up-SSH-authentication#settup-ssh-authentication-in-gitfaas-helm-chart). You can also deactivate the key check with the next parameters but it is NOT recommended. You can also use HTTP auth with personal token which doesn't need this at all. | (none) |
+| `app.git.sshKey.strictHostKeyChecking` | Available values are "yes" or "no". If set to "no" then key checking when using ssh key authentification will be deactivated. This is not recommended as someone might try MIM attacks. Prefer using personal token authentication instead. | `yes` |
+| `app.apply.bannedKubeRessources` | This is a list of separated (by space) Kubernetes ressources that really shouldn't be allowed to be applied by Gitfaas. Allowing someone to apply those might give an attacker the possibility to give him access to your cluster and compromise Gitfaas. This list should be extended if needed. Remember that Gitfaas is protected by RBAC and can only deploy "pods", "services", "deployments" and "jobs" by default. To apply other kinds of ressource you will need to update this rbac with you own RBAC Role and RoleBinding. Check this documentation to [update gitfaas RBAC](https://github.com/rememberSoftwares/gitfaas/wiki/Enforcing-security-in-Gitfaas#upgrade-rbac-configuration).  | `Role RoleBinding ClusterRole ClusterRoleBinding ServiceAccount Ingress` |
+| `app.apply.logLevel` | Application will write logs that can be viewed using kubectl logs. Available levels are "INFO", "DEBUG" and "WARN" | `INFO` |
+| `app.apply.configurationPath` | Gitfaas uses a single JSON configuration file to define topics and lambdas. This file must be present inside the Github repository. This setting will overwrite the default location which is at the root of the repo. Full path from root is mandatory but do not start with "/". ie "folder_1/folder_2/my_topic_settings.json" | `config.json` |
+| `redis.auth.password` | Redis password. Redis is used by Gitfaas to store lambdas responses and other run time information. It is best to be updated with something random. | `redacted` |
+>>>>>>> 749bd50417ec2a055dde7bdfa8acecf262ecf71d
 
 ## Basic configuration
 

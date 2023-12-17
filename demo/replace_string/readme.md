@@ -55,5 +55,5 @@ PAYLOAD=$(cat << EOF
 EOF
 )
     
-curl http://gitfaas/publish/replace -d "$(data)"
+curl http://gitfaas/publish/replace -d "$(PAYLOAD)"
 ```

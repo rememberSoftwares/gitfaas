@@ -3,6 +3,7 @@ import re
 import subprocess
 import os
 from enum import Enum, auto
+from datetime import datetime
 
 from Config import CLONE_FOLDER, VOLUME_MOUNT_PATH
 from ApplyFolders import UrlType, ApplyFolders
@@ -53,7 +54,7 @@ class Repo(object):
         Repo.check_git_errors(output)
 
     def update_repo(self):
-        logging.info("Updating repo")
+        logging.info(f"Updating repo : {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}")
         self.previous_hash = self.current_hash
         if self.firstRun:
             self._clone_repo()
@@ -142,7 +143,7 @@ class RepoHttp(Repo):
             pass
         os.chdir(VOLUME_MOUNT_PATH + "/" + CLONE_FOLDER)
         command = "git clone -b " + self.branch + " --single-branch " + self.scheme + "://" + self.user_name + ":" + self.token + "@" + self.repo_url
-        redacted_command_for_logs = "git clone -b " + self.branch + " --single-branch " + self.scheme + "://" + self.user_name + ":" + "[REDACTED TO LIMIT TOKEN LEAKING IN LOGS]" + "@" + self.repo_url
+        redacted_command_for_logs = "git clone -b " + self.branch + " --single-branch " + self.scheme + "://" + self.user_name + ":" + "[REDACTED TO PREVENT TOKEN LEAKING IN LOGS]" + "@" + self.repo_url
         output = Exec.run(command, show_command=False, info_msg="Redacted command : " + redacted_command_for_logs)
         Repo.check_git_errors(output)
 

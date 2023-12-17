@@ -1,0 +1,41 @@
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  # Do not remove {{RANDOM}} variable
+  # unless you know what you are doing
+  name: {{function_name}}-{{RANDOM}}
+  namespace: {{namespace}}
+spec:
+  ttlSecondsAfterFinished: {{scale_to_zero_value}}
+  backoffLimit: {{retries}}
+  template:
+    spec:
+      containers:
+      - name: myfunction
+        image: {{image}}
+        env:
+        # Do not remove {{PAYLOAD}} and {{FUNCTION_UID}} variables
+        # unless you know what you are doing
+        - name: PAYLOAD
+          value: "{{PAYLOAD}}"
+        - name: FUNCTION_UID
+          value: "{{FUNCTION_UID}}"
+        {{#show_volumes}}
+        volumeMounts:
+          - name: my-light-volume
+            mountPath: /mnt/disk/
+      volumes:
+        - name: my-light-volume
+          ephemeral:
+            volumeClaimTemplate:
+              metadata:
+                labels:
+                  type: my-volume
+              spec:
+                accessModes: [ "ReadWriteOnce" ]
+                resources:
+                  requests:
+                    storage: {{volume_size}}Gi
+        {{/show_volumes}}
+---

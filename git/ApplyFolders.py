@@ -53,7 +53,6 @@ class ApplyFolders:
             shutil.rmtree(self._get_folder_path_from_enum(e_target_folder))
         except (NameError, FileNotFoundError):
             pass
-        #os.mkdir(self._get_folder_path_from_enum(e_target_folder))
 
         # Copies git cloned folder to currently unused folder
         shutil.copytree(VOLUME_MOUNT_PATH + "/" + CLONE_FOLDER, self._get_folder_path_from_enum(e_target_folder))

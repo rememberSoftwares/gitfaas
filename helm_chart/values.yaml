@@ -10,10 +10,10 @@ image:
   pullPolicy: Always
   apply:
     name: gitfaas-apply
-    version: 1.0.0
+    version: 1.1.0
   git:
     name: gitfaas-git
-    version: 1.0.0
+    version: 1.1.0
 
 rbac:
   # Either restricts manifests to be deployed into the gitfaas namespace or in any namespace.
@@ -87,6 +87,10 @@ app:
     # Do not prepend with a "/"
     configurationPath: "config.json"
 
+    # Number of seconds before the data is purged inside redis. Defaults to 172800 seconds (2 days).
+    # This means that any function has 2 days to post an answer after it started, and you have 2 days to retrieve its answer
+    expirationTime: 172800
+
 service:
   type: ClusterIP
   port: 5000
@@ -133,12 +137,21 @@ tolerations: []
 affinity: {}
 
 redis:
+  # The response of each lambda is stored inside redis. To be sure that the memory doesn't explode all responses will
+  # be deleted from Redis. The countdown starts when a message is sent and lamda(s) are created. This mea
+  purge_trigger_time: 48
   auth:
+<<<<<<< HEAD
     # You should update this to whatever you want ! Just don't leave this default value. It's not a safe world out there.
+=======
+    # Maybe update this. Even though redis in only used to store runtime config and NOT the repo files it's better to
+    # have something random
+>>>>>>> 749bd50417ec2a055dde7bdfa8acecf262ecf71d
     password: thisisthepassword
   master:
     persistence:
-      enabled: false
+      # This could be way smaller if the payload responses are small
+      size: 500Mi
   replica:
     replicaCount: 0
     persistence:
